@@ -18,20 +18,19 @@ library(xtable)
 library(readxl)
 
 #################
-load("./objs/ET_metabric.rda")
+THR_signature <- read.delim("./data/THR_CellExpress.csv", sep = ',')
 
-## get the ET125 genes
-# All <- read_xlsx('misc/ET-9 Selection Steps.xlsx')
-# ET60 <- All$`ET-60`
-# 
-# ET60[ET60=='GPR56'] <- 'ADGRG1'
-# ET60[ET60=='FAM116B'] <- 'DENND6B'
-# #ET125[ET125=='FAM46B'] <- 'TENT5B'
-# ET60[ET60=='HSA011916'] <- 'CTDNEP1'
- 
-# ET60 <- ET60[!is.na(ET60)]
+# sort by p-value in ascending order
+THR_signature <- THR_signature[order(THR_signature$p.value, decreasing = FALSE), ]
 
-myTSPs <- t(combn(ET37, 2))
+# remove NAs
+THR_signature <- THR_signature[!is.na(THR_signature$Gene), ]
+
+# get the top 50
+#THR_signature <- THR_signature[c(1:50), ]
+
+# make TSPs
+myTSPs <- t(combn(THR_signature$Gene, 2))
 colnames(myTSPs) <- c("gene1", "gene2")
 
 ################
@@ -60,66 +59,66 @@ featNo <- nrow(Expr_metabric)
 ### Train a classifier using default filtering function based on Wilcoxon
 set.seed(333)
 
-ktsp_metabric <- SWAP.Train.KTSP(
-  Expr_metabric, group_metabric, krange=4, disjoint = T, 
-  FilterFunc = SWAP.Filter.Wilcoxon, featureNo=featNo, RestrictedPairs = myTSPs)
+ktsp_tcga <- SWAP.Train.KTSP(
+  Expr_tcga, group_tcga, krange=ktsp, disjoint = T, 
+  FilterFunc = SWAP.Filter.Wilcoxon, featureNo=50, RestrictedPairs = myTSPs)
 
-ktsp_metabric
+ktsp_tcga
 
 ############################################################################
 ### Compute the sum and find the best threshold: All training samples
-ktspStats_metabric <- SWAP.KTSP.Statistics(inputMat = Expr_metabric, classifier = ktsp_metabric, CombineFunc = sum)
-summary(ktspStats_metabric$statistics)
+ktspStats_tcga <- SWAP.KTSP.Statistics(inputMat = Expr_tcga, classifier = ktsp_tcga, CombineFunc = sum)
+summary(ktspStats_tcga$statistics)
 
 ### Threshold
-thr <- coords(roc(group_metabric, ktspStats_metabric$statistics, levels = c(0, 1), direction = "<" ), "best")["threshold"]
+thr <- coords(roc(group_tcga, ktspStats_tcga$statistics, levels = c(0, 1), direction = "<" ), "best")["threshold"]
 thr
 
 ### Print ROC curve local maximas
-coords(roc(group_metabric, ktspStats_metabric$statistics, levels = c(0, 1), direction = "<" ), "local maximas")
+coords(roc(group_tcga, ktspStats_tcga$statistics, levels = c(0, 1), direction = "<" ), "local maximas")
 
 ### Plot Curve: note that you must reorder the levels!!!
 ### ("good" goes first, "bad" goes second, the opposite of confusionMatrix)
-ROC_metabric <- roc(group_metabric, ktspStats_metabric$statistics, plot = F, print.auc=TRUE, ci = T, print.auc.col="black", levels = c(0, 1), direction = "<", col="blue", lwd=2, grid=TRUE)
-ROC_metabric
+ROC_tcga <- roc(group_tcga, ktspStats_tcga$statistics, plot = F, print.auc=TRUE, ci = T, print.auc.col="black", levels = c(0, 1), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROC_tcga
 
 ### Get predictions based on best threshold from ROC curve
-prediction_metabric <- SWAP.KTSP.Classify(Expr_metabric, ktsp_metabric, DecisionFunc = function(x) sum(x) > thr)
+prediction_tcga <- SWAP.KTSP.Classify(Expr_tcga, ktsp_tcga, DecisionFunc = function(x) sum(x) > thr)
 
 ### Resubstitution performance in the TRAINING set
-confusionMatrix(prediction_metabric, group_metabric, positive = '1', mode = "everything")
+confusionMatrix(prediction_tcga, group_tcga, positive = '1', mode = "everything")
 
-MCC_metabric <- mltools::mcc(pred = prediction_metabric, actuals = group_metabric)
-MCC_metabric
+MCC_tcga <- mltools::mcc(pred = prediction_tcga, actuals = group_tcga)
+MCC_tcga
 
 ########################################################################
 #########################################################################
 ### Testing
 
 ## Compute the sum and find the best threshold
-ktspStats_tcga <- SWAP.KTSP.Statistics(inputMat = Expr_tcga, classifier = ktsp_metabric, CombineFunc = sum)
-summary(ktspStats_tcga$statistics)
+ktspStats_metabric <- SWAP.KTSP.Statistics(inputMat = Expr_metabric, classifier = ktsp_tcga, CombineFunc = sum)
+summary(ktspStats_metabric$statistics)
 
 ## Plot curve
-ROC_tcga <- roc(group_tcga, ktspStats_tcga$statistics, plot = F, print.auc=TRUE, ci = T, print.auc.col="black", levels = c(0, 1), direction = "<", col="blue", lwd=2, grid=TRUE, main= "Mechanistic KTSP using TF_MiR Gns")
-ROC_tcga
+ROC_metabric <- roc(group_metabric, ktspStats_metabric$statistics, plot = F, print.auc=TRUE, ci = T, print.auc.col="black", levels = c(0, 1), direction = "<", col="blue", lwd=2, grid=TRUE, main= "Mechanistic KTSP using TF_MiR Gns")
+ROC_metabric
 
 ### Get predictions based on best threshold from ROC curve
-prediction_tcga <- SWAP.KTSP.Classify(Expr_tcga, ktsp_metabric, DecisionFunc = function(x) sum(x) > thr)
+prediction_metabric <- SWAP.KTSP.Classify(Expr_metabric, ktsp_tcga, DecisionFunc = function(x) sum(x) > thr)
 
 ### Resubstitution performance in the Test set
-confusion_tcga <- confusionMatrix(prediction_tcga, group_tcga, positive = "1", mode = "everything")
-confusion_tcga
+confusion_metabric <- confusionMatrix(prediction_metabric, group_metabric, positive = "1", mode = "everything")
+confusion_metabric
 
-MCC_tcga <- mltools::mcc(pred = prediction_tcga, actuals = group_tcga)
-MCC_tcga
+MCC_metabric <- mltools::mcc(pred = prediction_metabric, actuals = group_metabric)
+MCC_metabric
 
 
 ############################################################
 ############################################################
 ############################################################
 # test the ktsp pairs with survival
-ClassifierGenes <- as.vector(ktsp_metabric$TSPs)
+ClassifierGenes <- as.vector(ktsp_tcga$TSPs)
 
 # intersection with ET9
 All <- read_xlsx('misc/ET-9 Selection Steps.xlsx')
@@ -133,10 +132,10 @@ ET9_ET4_int
 ##########################
 ## Keep only the relevant information (Metastasis Event and Time)
 Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.")], 
-                   ktspStats_metabric$comparisons, prediction_metabric)
+                            ktspStats_metabric$comparisons, prediction_metabric)
 
 Phenotype_tcga <- cbind(Pheno_tcga[, c("Progression.Free.Status", "Progress.Free.Survival..Months.")], 
-                            ktspStats_tcga$comparisons, prediction_tcga)
+                        ktspStats_tcga$comparisons, prediction_tcga)
 
 #Expr_metabric <- Expr_metabric[ClassifierGenes, ]
 #Expr_tcga <- Expr_tcga[ClassifierGenes, ]
@@ -171,32 +170,32 @@ Fit_sig_metabric <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Sta
 ## Plot survival curves
 
 plot_IGFBP5_ID3_metabric <- ggsurvplot(Fit_IGFBP5_ID3_metabric,
-                    risk.table = FALSE,
-                    pval = TRUE,
-                    ggtheme = theme_minimal(),
-                    risk.table.y.text.col = FALSE,
-                    risk.table.y.text = FALSE, title = "IGFBP5 > ID3")
+                                       risk.table = FALSE,
+                                       pval = TRUE,
+                                       ggtheme = theme_minimal(),
+                                       risk.table.y.text.col = FALSE,
+                                       risk.table.y.text = FALSE, title = "IGFBP5 > ID3")
 
 plot_GDPD5_S100A6_metabric <- ggsurvplot(Fit_GDPD5_S100A6_metabric,
-                    risk.table = FALSE,
-                    pval = TRUE,
-                    ggtheme = theme_minimal(),
-                    risk.table.y.text.col = FALSE,
-                    risk.table.y.text = FALSE, title = "GDPD5 > S100A6")
+                                         risk.table = FALSE,
+                                         pval = TRUE,
+                                         ggtheme = theme_minimal(),
+                                         risk.table.y.text.col = FALSE,
+                                         risk.table.y.text = FALSE, title = "GDPD5 > S100A6")
 
 plot_CCDC69_IER5_metabric <- ggsurvplot(Fit_CCDC69_IER5_metabric,
-                    risk.table = FALSE,
-                    pval = TRUE,
-                    ggtheme = theme_minimal(),
-                    risk.table.y.text.col = FALSE,
-                    risk.table.y.text = FALSE, title = "IER5L > CCDC69")
+                                        risk.table = FALSE,
+                                        pval = TRUE,
+                                        ggtheme = theme_minimal(),
+                                        risk.table.y.text.col = FALSE,
+                                        risk.table.y.text = FALSE, title = "IER5L > CCDC69")
 
 plot_CUX1_CX3CL1_metabric <- ggsurvplot(Fit_CUX1_CX3CL1_metabric,
-                    risk.table = FALSE,
-                    pval = TRUE,
-                    ggtheme = theme_minimal(),
-                    risk.table.y.text.col = FALSE,
-                    risk.table.y.text = FALSE, title = "CUX1 > CX3CL1")
+                                        risk.table = FALSE,
+                                        pval = TRUE,
+                                        ggtheme = theme_minimal(),
+                                        risk.table.y.text.col = FALSE,
+                                        risk.table.y.text = FALSE, title = "CUX1 > CX3CL1")
 
 
 pdf("./figs/ET4_Allpairs_metabric.pdf", width = 8, height = 8, onefile = F)
@@ -229,32 +228,32 @@ Fit_sig_tcga <- survfit(Surv(Progress.Free.Survival..Months., Progression.Free.S
 ## Plot survival curves
 
 plot_IGFBP5_ID3_tcga <- ggsurvplot(Fit_IGFBP5_ID3_tcga,
-                                          risk.table = FALSE,
-                                          pval = TRUE,
-                                          ggtheme = theme_minimal(),
-                                          risk.table.y.text.col = FALSE,
-                                          risk.table.y.text = FALSE, title = "IGFBP5 > ID3")
+                                   risk.table = FALSE,
+                                   pval = TRUE,
+                                   ggtheme = theme_minimal(),
+                                   risk.table.y.text.col = FALSE,
+                                   risk.table.y.text = FALSE, title = "IGFBP5 > ID3")
 
 plot_GDPD5_S100A6_tcga <- ggsurvplot(Fit_GDPD5_S100A6_tcga,
-                                        risk.table = FALSE,
-                                        pval = TRUE,
-                                        ggtheme = theme_minimal(),
-                                        risk.table.y.text.col = FALSE,
-                                        risk.table.y.text = FALSE, title = "GDPD5 > S100A6")
+                                     risk.table = FALSE,
+                                     pval = TRUE,
+                                     ggtheme = theme_minimal(),
+                                     risk.table.y.text.col = FALSE,
+                                     risk.table.y.text = FALSE, title = "GDPD5 > S100A6")
 
 plot_CCDC69_IER5_tcga <- ggsurvplot(Fit_CCDC69_IER5_tcga,
-                                          risk.table = FALSE,
-                                          pval = TRUE,
-                                          ggtheme = theme_minimal(),
-                                          risk.table.y.text.col = FALSE,
-                                          risk.table.y.text = FALSE, title = "IER5L > CCDC69")
+                                    risk.table = FALSE,
+                                    pval = TRUE,
+                                    ggtheme = theme_minimal(),
+                                    risk.table.y.text.col = FALSE,
+                                    risk.table.y.text = FALSE, title = "IER5L > CCDC69")
 
 plot_CUX1_CX3CL1_tcga <- ggsurvplot(Fit_CUX1_CX3CL1_tcga,
-                                       risk.table = FALSE,
-                                       pval = TRUE,
-                                       ggtheme = theme_minimal(),
-                                       risk.table.y.text.col = FALSE,
-                                       risk.table.y.text = FALSE, title = "CUX1 > CX3CL1")
+                                    risk.table = FALSE,
+                                    pval = TRUE,
+                                    ggtheme = theme_minimal(),
+                                    risk.table.y.text.col = FALSE,
+                                    risk.table.y.text = FALSE, title = "CUX1 > CX3CL1")
 
 
 pdf("./figs/ET4_Allpairs_tcga.pdf", width = 8, height = 8, onefile = F)
