@@ -22,17 +22,22 @@ library(survminer)
 #################
 THR_signature <- read.delim("./data/THR_CellExpress_new.csv", sep = ',')
 
+THR_signature_top350 <- readxl::read_xlsx("./data/THR_top_350.xlsx")
+
 # sort by p-value in ascending order
 THR_signature <- THR_signature[order(THR_signature$p.value, decreasing = FALSE), ]
+THR_signature_top350 <- THR_signature_top350[order(THR_signature_top350$`p-value`, decreasing = FALSE), ]
 
 # remove NAs
 THR_signature <- THR_signature[!is.na(THR_signature$Gene), ]
+THR_signature_top350 <- THR_signature_top350[!is.na(THR_signature_top350$Gene), ]
 
 # get the top genes
 #THR_signature <- THR_signature[c(1:100), ]
 
 # make TSPs
-myTSPs <- t(combn(THR_signature$Gene, 2))
+#myTSPs <- t(combn(THR_signature$Gene, 2))
+myTSPs <- t(combn(THR_signature_top350$Gene, 2))
 colnames(myTSPs) <- c("gene1", "gene2")
 
 ################
@@ -59,10 +64,10 @@ ktsp <- c(3:25) #7
 featNo <- nrow(Expr_metabric)
 
 ### Train a classifier using default filtering function based on Wilcoxon
-set.seed(333)
+set.seed(333) # 9/7 # 25
 
 ktsp_metabric <- SWAP.Train.KTSP(
-  Expr_metabric, group_metabric, krange=9, disjoint = T, 
+  Expr_metabric, group_metabric, krange=10, disjoint = T, 
   FilterFunc = SWAP.Filter.Wilcoxon, featureNo=25, RestrictedPairs = myTSPs)
 
 ktsp_metabric
@@ -184,22 +189,64 @@ Pval_df_metabric_os <- do.call(rbind.data.frame, Pval_list_metabric_os)
 plot_list_metabric_os <- ggsurvplot_list(fit_list_metabric_os, CoxData_metabric, legend.title = names(fit_list_metabric_os), pval = TRUE)
 
 
-Splot_metabric_os <- arrange_ggsurvplots(plot_list_metabric_os, title = "Survival plots using the 9 pairs individually", ncol = 2, nrow = 5)
-ggsave("./figures/9TSPs_Metabric_os.pdf", Splot_metabric_os, width = 40, height = 40, units = "cm")
+Splot_metabric_os <- arrange_ggsurvplots(plot_list_metabric_os, title = "Survival plots using the 10 pairs individually", ncol = 2, nrow = 5)
+ggsave("./figures/10TSPs_Metabric_os.pdf", Splot_metabric_os, width = 40, height = 40, units = "cm")
 
 
 ## metabric all pairs
 Fit_sig_metabric <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ prediction_metabric, data = CoxData_metabric)
+surv_pvalue(Fit_sig_metabric)
 
-pdf("./figures/THR_Allpairs_metabric.pdf", width = 8, height = 8, onefile = F)
+pdf("./figures/THRtop350_Allpairs_metabric.pdf", width = 8, height = 8, onefile = F)
 ggsurvplot(Fit_sig_metabric,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = '9-TSPs and METABRIC OS')
+           risk.table.y.text = FALSE, title = '10-TSPs and METABRIC OS')
 dev.off()
 
+#############
+## fit coxph model:
+
+# by pair
+surv_func_metabric_os_coxph <- function(x){
+  f <- as.formula(paste("Surv(Overall.Survival..Months., Overall.Survival.Status) ~", x))
+  return(coxph(f, data = CoxData_metabric))
+}
+
+fit_list_metabric_os_coxph <- lapply(pairs_list, surv_func_metabric_os_coxph)
+names(fit_list_metabric_os_coxph) <- pairs_list
+
+summary_list_metabric_os_coxph <- lapply(fit_list_metabric_os_coxph, summary)
+
+# get the HR
+HR_list_metabric_os_coxph <- lapply(summary_list_metabric_os_coxph, function(x){
+  HR <- x$conf.int[, 'exp(coef)']
+  Pvalue_Likelihood_ratio_test <- x$logtest['pvalue']
+  Pvalue_logrank_test <- x$sctest['pvalue']
+  Pvalue_wald_test <- x$waldtest['pvalue']
+  data.frame(HR = HR, Pvalue_Likelihood_ratio_test = Pvalue_Likelihood_ratio_test, 
+             Pvalue_logrank_test = Pvalue_logrank_test, Pvalue_wald_test = Pvalue_wald_test)
+})
+
+
+HR_df_metabric_os_coxph <- as.data.frame(do.call(rbind, HR_list_metabric_os_coxph))
+HR_df_metabric_os_coxph$variable <- rownames(HR_df_metabric_os_coxph)
+HR_df_metabric_os_coxph <- HR_df_metabric_os_coxph[order(HR_df_metabric_os_coxph$HR, decreasing = T), ]
+
+# save the results
+write.csv(HR_df_metabric_os_coxph, 'objs/HR_df_metabric_os_coxph.csv')
+
+
+########
+# by predictions
+Fit_sig_metabric_coxph <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ prediction_metabric, data = CoxData_metabric)
+summary(Fit_sig_metabric_coxph)
+
+ggforest(Fit_sig_metabric_coxph)
+
+########################################################################  
 ########################################################################  
 ## Fit survival curves: TCGA: 
 
@@ -225,22 +272,63 @@ Pval_df_tcga_os <- do.call(rbind.data.frame, Pval_list_tcga_os)
 plot_list_tcga_os <- ggsurvplot_list(fit_list_tcga_os, CoxData_tcga, legend.title = names(fit_list_tcga_os), pval = TRUE)
 
 
-Splot_tcga_os <- arrange_ggsurvplots(plot_list_tcga_os, title = "Overall survival in the TCGA using the 9 pairs individually", ncol = 2, nrow = 4)
-ggsave("./figures/9TSPs_tcga_os.pdf", Splot_tcga_os, width = 40, height = 40, units = "cm")
+Splot_tcga_os <- arrange_ggsurvplots(plot_list_tcga_os, title = "Overall survival in the TCGA using the 10 pairs individually", ncol = 2, nrow = 5)
+ggsave("./figures/10TSPs_tcga_os.pdf", Splot_tcga_os, width = 40, height = 40, units = "cm")
 
 
 ## TCGA all pairs
 Fit_sig_TCGA_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ prediction_tcga, data = CoxData_tcga)
 
-pdf("./figures/THR_Allpairs_TCGA_os.pdf", width = 8, height = 8, onefile = F)
+pdf("./figures/THRtop350_Allpairs_TCGA_os.pdf", width = 8, height = 8, onefile = F)
 ggsurvplot(Fit_sig_TCGA_os,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = '9-TSPs and TCGA OS')
+           risk.table.y.text = FALSE, title = '10-TSPs and TCGA OS')
 dev.off()
 
+#############
+## fit coxph model:
+
+# by pair
+surv_func_TCGA_os_coxph <- function(x){
+  f <- as.formula(paste("Surv(Overall.Survival..Months., Overall.Survival.Status) ~", x))
+  return(coxph(f, data = CoxData_tcga))
+}
+
+fit_list_TCGA_os_coxph <- lapply(pairs_list, surv_func_TCGA_os_coxph)
+names(fit_list_TCGA_os_coxph) <- pairs_list
+
+summary_list_TCGA_os_coxph <- lapply(fit_list_TCGA_os_coxph, summary)
+
+# get the HR
+HR_list_TCGA_os_coxph <- lapply(summary_list_TCGA_os_coxph, function(x){
+  HR <- x$conf.int[, 'exp(coef)']
+  Pvalue_Likelihood_ratio_test <- x$logtest['pvalue']
+  Pvalue_logrank_test <- x$sctest['pvalue']
+  Pvalue_wald_test <- x$waldtest['pvalue']
+  data.frame(HR = HR, Pvalue_Likelihood_ratio_test = Pvalue_Likelihood_ratio_test, 
+             Pvalue_logrank_test = Pvalue_logrank_test, Pvalue_wald_test = Pvalue_wald_test)
+})
+
+
+HR_df_TCGA_os_coxph <- as.data.frame(do.call(rbind, HR_list_TCGA_os_coxph))
+HR_df_TCGA_os_coxph$variable <- rownames(HR_df_TCGA_os_coxph)
+HR_df_TCGA_os_coxph <- HR_df_TCGA_os_coxph[order(HR_df_TCGA_os_coxph$HR, decreasing = T), ]
+
+# save the results
+write.csv(HR_df_TCGA_os_coxph, 'objs/HR_df_TCGA_os_coxph.csv')
+
+
+########
+# by predictions
+Fit_sig_TCGA_coxph <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ prediction_tcga, data = CoxData_tcga)
+summary(Fit_sig_TCGA_coxph)
+
+ggforest(Fit_sig_TCGA_coxph)
+
+########################################################################  
 ########################################################################  
 ## Fit survival curves: TCGA: 
 
@@ -266,18 +354,59 @@ Pval_df_tcga_pfs <- do.call(rbind.data.frame, Pval_list_tcga_pfs)
 plot_list_tcga_pfs <- ggsurvplot_list(fit_list_tcga_pfs, CoxData_tcga, legend.title = names(fit_list_tcga_pfs), pval = TRUE)
 
 
-Splot_tcga_pfs <- arrange_ggsurvplots(plot_list_tcga_pfs, title = "Progression free survival in the TCGA using the 9 pairs individually", ncol = 2, nrow = 5)
-ggsave("./figures/9TSPs_tcga_pfs.pdf", Splot_tcga_pfs, width = 40, height = 40, units = "cm")
+Splot_tcga_pfs <- arrange_ggsurvplots(plot_list_tcga_pfs, title = "Progression free survival in the TCGA using the 10 pairs individually", ncol = 2, nrow = 5)
+ggsave("./figures/10TSPs_tcga_pfs.pdf", Splot_tcga_pfs, width = 40, height = 40, units = "cm")
 
 
 ## TCGA all pairs
 Fit_sig_TCGA_pfs <- survfit(Surv(Progress.Free.Survival..Months., Progression.Free.Status) ~ prediction_tcga, data = CoxData_tcga)
 
-pdf("./figures/THR_Allpairs_TCGA_PFS.pdf", width = 8, height = 8, onefile = F)
+pdf("./figures/THRtop350_Allpairs_TCGA_PFS.pdf", width = 8, height = 8, onefile = F)
 ggsurvplot(Fit_sig_TCGA_pfs,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = '9-TSPs and TCGA PFS')
+           risk.table.y.text = FALSE, title = '10-TSPs and TCGA PFS')
 dev.off()
+
+#############
+## fit coxph model:
+
+# by pair
+surv_func_TCGA_pfs_coxph <- function(x){
+  f <- as.formula(paste("Surv(Progress.Free.Survival..Months., Progression.Free.Status) ~", x))
+  return(coxph(f, data = CoxData_tcga))
+}
+
+fit_list_TCGA_pfs_coxph <- lapply(pairs_list, surv_func_TCGA_pfs_coxph)
+names(fit_list_TCGA_pfs_coxph) <- pairs_list
+
+summary_list_TCGA_pfs_coxph <- lapply(fit_list_TCGA_pfs_coxph, summary)
+
+# get the HR
+HR_list_TCGA_pfs_coxph <- lapply(summary_list_TCGA_pfs_coxph, function(x){
+  HR <- x$conf.int[, 'exp(coef)']
+  Pvalue_Likelihood_ratio_test <- x$logtest['pvalue']
+  Pvalue_logrank_test <- x$sctest['pvalue']
+  Pvalue_wald_test <- x$waldtest['pvalue']
+  data.frame(HR = HR, Pvalue_Likelihood_ratio_test = Pvalue_Likelihood_ratio_test, 
+             Pvalue_logrank_test = Pvalue_logrank_test, Pvalue_wald_test = Pvalue_wald_test)
+})
+
+
+HR_df_TCGA_pfs_coxph <- as.data.frame(do.call(rbind, HR_list_TCGA_pfs_coxph))
+HR_df_TCGA_pfs_coxph$variable <- rownames(HR_df_TCGA_pfs_coxph)
+HR_df_TCGA_pfs_coxph <- HR_df_TCGA_pfs_coxph[order(HR_df_TCGA_pfs_coxph$HR, decreasing = T), ]
+
+# save the results
+write.csv(HR_df_TCGA_pfs_coxph, 'objs/HR_df_TCGA_pfs_coxph.csv')
+
+
+########
+# by predictions
+Fit_sig_TCGA_pfs_coxph <- coxph(Surv(Progress.Free.Survival..Months., Progression.Free.Status) ~ prediction_tcga, data = CoxData_tcga)
+summary(Fit_sig_TCGA_pfs_coxph)
+
+ggforest(Fit_sig_TCGA_pfs_coxph)
+
