@@ -54,9 +54,6 @@ colnames(Data_tcga)[colnames(Data_tcga) %in% c('group_tcga')] <- c('os')
 ### TRAINING using logistic regression
 ###########################################################################
 
-setdiff(THR_50_1, THR_50_1_fil)
-setdiff(THR_50_2, THR_50_2_fil)
-
 rownames(Expr_metabric)[grep('^ZNF652', rownames(Expr_metabric))]
 rownames(Expr_tcga)[grep('^ZNF652', rownames(Expr_tcga))]
 
@@ -66,6 +63,14 @@ THR_25_fil <- THR_25[THR_25 %in% rownames(Expr_metabric) & THR_25 %in% rownames(
 THR_50_1_fil <- THR_50_1[THR_50_1 %in% rownames(Expr_metabric) & THR_50_1 %in% rownames(Expr_tcga)]
 THR_50_2_fil <- THR_50_2[THR_50_2 %in% rownames(Expr_metabric) & THR_50_2 %in% rownames(Expr_tcga)]
 
+
+THR_50_1_fil_tcga <- THR_50_1[THR_50_1 %in% rownames(Expr_tcga)]
+
+setdiff(THR_50_1, THR_50_1_fil)
+setdiff(THR_50_2, THR_50_2_fil)
+
+###################
+# the model
 
 THR25_model <- glm(as.formula((paste("os ~", paste(THR_25_fil, collapse = "+")))), data = Data_metabric, family = "binomial")
 summary(THR25_model)
@@ -200,7 +205,7 @@ MCC_tcga_THR50_2
 
 ##########################
 ## Keep only the relevant information (Metastasis Event and Time)
-Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.")], 
+Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.")], 
                                   Train_prob_THR25, Train_prob_THR50_1, Train_prob_THR50_2, Train_predClasses_THR25, Train_predClasses_THR50_1, Train_predClasses_THR50_2)
 
 Phenotype_tcga <- cbind(Pheno_tcga[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Progression.Free.Status", "Progress.Free.Survival..Months.")], 
@@ -270,23 +275,34 @@ CoxData_tcga <- CoxData_tcga %>%
 #ggsave("./figures/sep28/THR25_Metabric_os.pdf", Splot_metabric_os, width = 40, height = 40, units = "cm")
 
 
+# OS
 ## metabric all genes
-Fit_sig_metabric_THR25 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR25, data = CoxData_metabric)
-Fit_sig_metabric_THR50_1 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50_1, data = CoxData_metabric)
-Fit_sig_metabric_THR50_2 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50_2, data = CoxData_metabric)
+Fit_sig_metabric_os_THR25 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR25, data = CoxData_metabric)
+Fit_sig_metabric_os_THR50_1 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50_1, data = CoxData_metabric)
+Fit_sig_metabric_os_THR50_2 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50_2, data = CoxData_metabric)
 
 ## by quartiles
-Fit_sig_metabric_THR25_quartiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR25_quartiles, data = CoxData_metabric)
-Fit_sig_metabric_THR50_1_quartiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_1_quartiles, data = CoxData_metabric)
-Fit_sig_metabric_THR50_2_quartiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_2_quartiles, data = CoxData_metabric)
+Fit_sig_metabric_os_THR25_quartiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR25_quartiles, data = CoxData_metabric)
+Fit_sig_metabric_os_THR50_1_quartiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_1_quartiles, data = CoxData_metabric)
+Fit_sig_metabric_os_THR50_2_quartiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_2_quartiles, data = CoxData_metabric)
 
-######
-surv_pvalue(Fit_sig_metabric_THR25)
-surv_pvalue(Fit_sig_metabric_THR50_1)
-surv_pvalue(Fit_sig_metabric_THR50_2)
 
-pdf("./figures/logreg/THR25_metabric_allpairs.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_THR25,
+# RFS
+## metabric all genes
+Fit_sig_metabric_RFS_THR25 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR25, data = CoxData_metabric)
+Fit_sig_metabric_RFS_THR50_1 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR50_1, data = CoxData_metabric)
+Fit_sig_metabric_RFS_THR50_2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR50_2, data = CoxData_metabric)
+
+## by quartiles
+Fit_sig_metabric_RFS_THR25_quartiles <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR25_quartiles, data = CoxData_metabric)
+Fit_sig_metabric_RFS_THR50_1_quartiles <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_1_quartiles, data = CoxData_metabric)
+Fit_sig_metabric_RFS_THR50_2_quartiles <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_2_quartiles, data = CoxData_metabric)
+
+######################################
+# plot OS
+
+pdf("./figures/logreg/THR25_metabric_os_allpairs.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR25,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
@@ -294,8 +310,8 @@ ggsurvplot(Fit_sig_metabric_THR25,
            risk.table.y.text = FALSE, title = 'THR 25 (logistic regression) and METABRIC OS')
 dev.off()
 
-pdf("./figures/logreg/THR50_1_metabric_allpairs.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_THR50_1,
+pdf("./figures/logreg/THR50_1_metabric_os_allpairs.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR50_1,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
@@ -303,8 +319,8 @@ ggsurvplot(Fit_sig_metabric_THR50_1,
            risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC OS')
 dev.off()
 
-pdf("./figures/logreg/THR50_2_metabric_allpairs.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_THR50_2,
+pdf("./figures/logreg/THR50_2_metabric_os_allpairs.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR50_2,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
@@ -314,8 +330,8 @@ dev.off()
 
 ########
 # by quartiles
-pdf("./figures/logreg/THR25_metabric_quartiles.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_THR25_quartiles,
+pdf("./figures/logreg/THR25_metabric_os_quartiles.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR25_quartiles,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
@@ -323,8 +339,8 @@ ggsurvplot(Fit_sig_metabric_THR25_quartiles,
            risk.table.y.text = FALSE, title = 'THR 25 (logistic regression) and METABRIC OS: quartiles')
 dev.off()
 
-pdf("./figures/logreg/THR50_1_metabric_quartiles.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_THR50_1_quartiles,
+pdf("./figures/logreg/THR50_1_metabric_os_quartiles.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR50_1_quartiles,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
@@ -332,14 +348,74 @@ ggsurvplot(Fit_sig_metabric_THR50_1_quartiles,
            risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC OS: quartiles')
 dev.off()
 
-pdf("./figures/logreg/THR50_2_metabric_quartiles.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_THR50_2_quartiles,
+pdf("./figures/logreg/THR50_2_metabric_os_quartiles.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR50_2_quartiles,
            risk.table = FALSE,
            pval = TRUE,
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'THR 50_2 (logistic regression) and METABRIC OS: quartiles')
 dev.off()
+
+######################################
+# plot RFS
+
+pdf("./figures/logreg/THR25_metabric_RFS_allpairs.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_RFS_THR25,
+           risk.table = FALSE,
+           pval = TRUE,
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR 25 (logistic regression) and METABRIC RFS')
+dev.off()
+
+pdf("./figures/logreg/THR50_1_metabric_RFS_allpairs.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_RFS_THR50_1,
+           risk.table = FALSE,
+           pval = TRUE,
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC RFS')
+dev.off()
+
+pdf("./figures/logreg/THR50_2_metabric_RFS_allpairs.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_RFS_THR50_2,
+           risk.table = FALSE,
+           pval = TRUE,
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR 50_2 (logistic regression) and METABRIC RFS')
+dev.off()
+
+########
+# by quartiles
+pdf("./figures/logreg/THR25_metabric_RFS_quartiles.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_RFS_THR25_quartiles,
+           risk.table = FALSE,
+           pval = TRUE,
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR 25 (logistic regression) and METABRIC RFS: quartiles')
+dev.off()
+
+pdf("./figures/logreg/THR50_1_metabric_RFS_quartiles.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_RFS_THR50_1_quartiles,
+           risk.table = FALSE,
+           pval = TRUE,
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC RFS: quartiles')
+dev.off()
+
+pdf("./figures/logreg/THR50_2_metabric_RFS_quartiles.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_RFS_THR50_2_quartiles,
+           risk.table = FALSE,
+           pval = TRUE,
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR 50_2 (logistic regression) and METABRIC RFS: quartiles')
+dev.off()
+
 
 #############
 ## fit coxph model:
@@ -375,15 +451,15 @@ dev.off()
 
 
 ########
-# by predictions
-Fit_sig_metabric_coxph_THR25 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR25, data = CoxData_metabric)
-summary(Fit_sig_metabric_coxph_THR25)
+# OS
+Fit_sig_metabric_os_coxph_THR25 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR25, data = CoxData_metabric)
+summary(Fit_sig_metabric_os_coxph_THR25)
 
-Fit_sig_metabric_coxph_THR50_1 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR50_1, data = CoxData_metabric)
+Fit_sig_metabric_os_coxph_THR50_1 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR50_1, data = CoxData_metabric)
 summary(Fit_sig_metabric_coxph_THR50_1)
 
-Fit_sig_metabric_coxph_THR50_2 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR50_2, data = CoxData_metabric)
-summary(Fit_sig_metabric_coxph_THR50_2)
+Fit_sig_metabric_os_coxph_THR50_2 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR50_2, data = CoxData_metabric)
+summary(Fit_sig_metabric_os_coxph_THR50_2)
 
 png('./figures/logreg/THR25_HR_metabric_os.png', width = 2000, height = 2000, res = 300)
 ggforest(Fit_sig_metabric_coxph_THR25, fontsize = 0.5)
@@ -394,6 +470,29 @@ ggforest(Fit_sig_metabric_coxph_THR50_1, fontsize = 0.5)
 dev.off()
 
 png('./figures/logreg/THR50_2_HR_metabric_os.png', width = 2000, height = 2000, res = 300)
+ggforest(Fit_sig_metabric_coxph_THR50_2, fontsize = 0.5)
+dev.off()
+
+################
+# RFS
+Fit_sig_metabric_RFS_coxph_THR25 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR25, data = CoxData_metabric)
+summary(Fit_sig_metabric_RFS_coxph_THR25)
+
+Fit_sig_metabric_RFS_coxph_THR50_1 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR50_1, data = CoxData_metabric)
+summary(Fit_sig_metabric_RFS_coxph_THR50_1)
+
+Fit_sig_metabric_RFS_coxph_THR50_2 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR50_2, data = CoxData_metabric)
+summary(Fit_sig_metabric_RFS_coxph_THR50_2)
+
+png('./figures/logreg/THR25_HR_metabric_RFS.png', width = 2000, height = 2000, res = 300)
+ggforest(Fit_sig_metabric_RFS_coxph_THR25, fontsize = 0.5)
+dev.off()
+
+png('./figures/logreg/THR50_1_HR_metabric_RFS.png', width = 2000, height = 2000, res = 300)
+ggforest(Fit_sig_metabric_coxph_THR50_1, fontsize = 0.5)
+dev.off()
+
+png('./figures/logreg/THR50_2_HR_metabric_RFS.png', width = 2000, height = 2000, res = 300)
 ggforest(Fit_sig_metabric_coxph_THR50_2, fontsize = 0.5)
 dev.off()
 
