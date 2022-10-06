@@ -19,12 +19,12 @@ library(readxl)
 
 ################
 # Load the METABRIC expr and pheno data
-Expr_metabric <- read.delim("./data/brca_metabric_cbioportal/data_mrna_agilent_microarray_zscores_ref_diploid_samples.txt")
+Expr_metabric <- read.delim("./data/brca_metabric_cbioportal/data_mrna_agilent_microarray_zscores_ref_all_samples.txt")
 Pheno_metabric <- read.delim("./data/brca_metabric_cbioportal/brca_metabric_clinical_data.tsv")
 
 ################
 # Load the TCGA expression and Phenotype data
-Expr_tcga <- read.delim("./data/brca_tcga/data_mrna_seq_v2_rsem_zscores_ref_diploid_samples.txt")
+Expr_tcga <- read.delim("./data/brca_tcga/data_mrna_seq_v2_rsem_zscores_ref_all_samples.txt")
 Pheno_tcga <- read.delim("./data/brca_tcga/data_clinical_patient.txt")
 Pheno_tcga <- Pheno_tcga[-c(1:4), ]
 
@@ -53,11 +53,13 @@ summary(is.na(rownames(Expr_tcga)))
 sel <- which(apply(Expr_tcga, 1, function(x) all(is.finite(x)) ))
 Expr_tcga <- Expr_tcga[sel, ]
 Expr_tcga <- Expr_tcga[!is.na(rownames(Expr_tcga)),]
+#rownames(Expr_tcga[Expr_tcga < -30, ])
+Expr_tcga <- Expr_tcga[!(rownames(Expr_tcga) %in% c('CEACAM18', 'KRTAP12-4', 'RPS4Y2', 'TTTY4C', 'DEFB134')), ]
 dim(Expr_tcga)
 range(Expr_tcga)
 
 # logscale
-Expr_tcga <- log2(Expr_tcga + 6)
+#Expr_tcga <- log2(Expr_tcga + 6)
 
 # fix the column names
 colnames(Expr_tcga) <- gsub('\\.01', '', colnames(Expr_tcga))
