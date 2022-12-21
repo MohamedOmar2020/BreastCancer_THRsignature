@@ -446,14 +446,17 @@ ggsurvplot(Fit_sig_metabric_os_THR25,
            risk.table.y.text = FALSE, title = 'THR 25 (logistic regression) and METABRIC OS')
 dev.off()
 
-pdf("./figures/logreg/oct10/THR50_1_metabric_os_allpairs.pdf", width = 8, height = 8, onefile = F)
+tiff("./figures/logreg/oct10/THR50_1_metabric_os_allpairs.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(Fit_sig_metabric_os_THR50_1,
            risk.table = FALSE,
-           pval = TRUE,
+           pval = FALSE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
-           ggtheme = theme_minimal(),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC OS')
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           #title = 'THR 50 and METABRIC OS'
+           )
 dev.off()
 
 pdf("./figures/logreg/oct10/THR50_2_metabric_os_allpairs.pdf", width = 8, height = 8, onefile = F)
@@ -478,14 +481,17 @@ ggsurvplot(Fit_sig_metabric_os_THR25_quartiles,
            risk.table.y.text = FALSE, title = 'THR 25 (logistic regression) and METABRIC OS: quartiles')
 dev.off()
 
-pdf("./figures/logreg/oct10/THR50_1_metabric_os_quartiles.pdf", width = 8, height = 8, onefile = F)
+tiff("./figures/logreg/oct10/THR50_1_metabric_os_quartiles.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(Fit_sig_metabric_os_THR50_1_quartiles,
            risk.table = FALSE,
-           pval = TRUE,
+           pval = FALSE,
            legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
-           ggtheme = theme_minimal(),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           palette = 'jco',
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC OS: quartiles')
+           risk.table.y.text = FALSE, 
+           #title = 'THR 50_1 (logistic regression) and METABRIC OS: quartiles'
+           )
 dev.off()
 
 pdf("./figures/logreg/oct10/THR50_2_metabric_os_quartiles.pdf", width = 8, height = 8, onefile = F)
@@ -511,14 +517,17 @@ ggsurvplot(Fit_sig_metabric_RFS_THR25,
            risk.table.y.text = FALSE, title = 'THR 25 (logistic regression) and METABRIC RFS')
 dev.off()
 
-pdf("./figures/logreg/oct10/THR50_1_metabric_RFS_allpairs.pdf", width = 8, height = 8, onefile = F)
+tiff("./figures/logreg/oct10/THR50_1_metabric_RFS_allpairs.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(Fit_sig_metabric_RFS_THR50_1,
            risk.table = FALSE,
-           pval = TRUE,
+           pval = FALSE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
-           ggtheme = theme_minimal(),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC RFS')
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           #title = 'THR 50_1 (logistic regression) and METABRIC RFS'
+           )
 dev.off()
 
 pdf("./figures/logreg/oct10/THR50_2_metabric_RFS_allpairs.pdf", width = 8, height = 8, onefile = F)
