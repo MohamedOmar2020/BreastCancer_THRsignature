@@ -21,6 +21,8 @@ library(precrec)
 library(patchwork)
 library(survminer)
 library(survival)
+library(tidyverse)
+library(pheatmap)
 
 #################
 THR_signature <- readxl::read_xlsx("./data/THR Signatures_sep23.xlsx")
@@ -69,7 +71,8 @@ THR_50_1_fil_tcga <- THR_50_1[THR_50_1 %in% rownames(Expr_metabric)]
 setdiff(THR_50_1, THR_50_1_fil)
 setdiff(THR_50_2, THR_50_2_fil)
 
-###################
+#############################################################################################################
+##############################################################################################################
 # the model
 
 THR25_model <- glm(as.formula((paste("os ~", paste(THR_25_fil, collapse = "+")))), data = Data_metabric, family = "binomial")
@@ -205,7 +208,7 @@ MCC_tcga_THR50_2
 
 ##########################
 ## Keep only the relevant information (Metastasis Event and Time)
-Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype")], 
+Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype", "cluster")], 
                                   Train_prob_THR25, Train_prob_THR50_1, Train_prob_THR50_2, Train_predClasses_THR25, Train_predClasses_THR50_1, Train_predClasses_THR50_2)
 
 Phenotype_tcga <- cbind(Pheno_tcga[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Progression.Free.Status", "Progress.Free.Survival..Months.")], 
@@ -431,6 +434,40 @@ Fit_sig_metabric_rfs_THR50_2_quartiles_X3 <- survfit(Surv(Relapse.Free.Status..M
 Fit_sig_metabric_rfs_THR25_Q1vsQ4_X3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR25_quartiles + X3.Gene.classifier.subtype, data = CoxData_metabric_Q1vsQ4_THR25)
 Fit_sig_metabric_rfs_THR50_1_Q1vsQ4_X3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_1_quartiles + X3.Gene.classifier.subtype, data = CoxData_metabric_Q1vsQ4_THR50_1)
 Fit_sig_metabric_rfs_THR50_2_Q1vsQ4_X3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_2_quartiles + X3.Gene.classifier.subtype, data = CoxData_metabric_Q1vsQ4_THR50_2)
+
+#######################################
+## clusters
+
+# os: all
+Fit_sig_metabric_os_THR25_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR25 + cluster, data = CoxData_metabric)
+Fit_sig_metabric_os_THR50_1_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50_1 + cluster, data = CoxData_metabric)
+Fit_sig_metabric_os_THR50_2_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50_2 + cluster, data = CoxData_metabric)
+
+# os: quartiles: all
+Fit_sig_metabric_os_THR25_quartiles_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR25_quartiles + cluster, data = CoxData_metabric)
+Fit_sig_metabric_os_THR50_1_quartiles_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_1_quartiles + cluster, data = CoxData_metabric)
+Fit_sig_metabric_os_THR50_2_quartiles_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_2_quartiles + cluster, data = CoxData_metabric)
+
+# os: quartiles: Q1 vs Q4
+Fit_sig_metabric_os_THR25_Q1vsQ4_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR25_quartiles + cluster, data = CoxData_metabric_Q1vsQ4_THR25)
+Fit_sig_metabric_os_THR50_1_Q1vsQ4_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_1_quartiles + cluster, data = CoxData_metabric_Q1vsQ4_THR50_1)
+Fit_sig_metabric_os_THR50_2_Q1vsQ4_clusters <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_2_quartiles + cluster, data = CoxData_metabric_Q1vsQ4_THR50_2)
+
+###########
+# rfs: all
+Fit_sig_metabric_rfs_THR25_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR25 + cluster, data = CoxData_metabric)
+Fit_sig_metabric_rfs_THR50_1_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR50_1 + cluster, data = CoxData_metabric)
+Fit_sig_metabric_rfs_THR50_2_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR50_2 + cluster, data = CoxData_metabric)
+
+# rfs: quartiles: all
+Fit_sig_metabric_rfs_THR25_quartiles_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR25_quartiles + cluster, data = CoxData_metabric)
+Fit_sig_metabric_rfs_THR50_1_quartiles_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_1_quartiles + cluster, data = CoxData_metabric)
+Fit_sig_metabric_rfs_THR50_2_quartiles_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_2_quartiles + cluster, data = CoxData_metabric)
+
+# rfs: quartiles: Q1 vs Q4
+Fit_sig_metabric_rfs_THR25_Q1vsQ4_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR25_quartiles + cluster, data = CoxData_metabric_Q1vsQ4_THR25)
+Fit_sig_metabric_rfs_THR50_1_Q1vsQ4_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_1_quartiles + cluster, data = CoxData_metabric_Q1vsQ4_THR50_1)
+Fit_sig_metabric_rfs_THR50_2_Q1vsQ4_clusters <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_2_quartiles + cluster, data = CoxData_metabric_Q1vsQ4_THR50_2)
 
 ############################################################################
 ############################################################################
@@ -1269,8 +1306,104 @@ ggsurvplot(Fit_sig_metabric_rfs_THR50_2_Q1vsQ4_X3,
            risk.table.y.text = FALSE, title = 'THR 50_2 and METABRIC RFS by X3 classifier subtypes: Q1 vs Q4')
 dev.off()
 
+
 ##############################################################################
 ##############################################################################
+##############################################################################################
+##############################################################################################
+## clusters
+
+# OS
+
+pdf("./figures/logreg/THR50_surv_clusters/metabric_os_clusters.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR50_1_clusters,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           #facet.by = "cluster",
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 and METABRIC OS by cluster')
+dev.off()
+
+
+######################
+# RFS
+pdf("./figures/logreg/THR50_surv_clusters/metabric_rfs_clusters.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_rfs_THR50_1_clusters,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "cluster",
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 and METABRIC RFS by cluster')
+dev.off()
+
+
+####################################################
+# OS: quartiles: all
+
+pdf("./figures/logreg/THR50_surv_clusters/metabric_os_clusters_quartiles.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR50_1_quartiles_clusters,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "cluster",
+           ggtheme = theme_minimal(),
+           legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR501 and METABRIC OS by cluster: quartiles')
+dev.off()
+
+
+####################################################
+# OS: quartiles: Q1 vs Q4
+
+pdf("./figures/logreg/THR50_surv_clusters/metabric_os_clusters_Q1vsQ4.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_os_THR50_1_Q1vsQ4_clusters,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "cluster",
+           ggtheme = theme_minimal(),
+           legend.labs = c('Q1', 'Q4'),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 and METABRIC OS by cluster: Q1 vs Q4')
+dev.off()
+
+
+###############################################################
+# RFS: quartiles: all
+
+pdf("./figures/logreg/THR50_surv_clusters/rfs/metabric_rfs_clusters_quartiles.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_rfs_THR50_1_quartiles_clusters,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "cluster",
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
+           risk.table.y.text = FALSE, title = 'THR50 and METABRIC RFS by cluster: quartiles')
+dev.off()
+
+###############################################################
+# RFS: quartiles: Q1 vs Q4
+
+
+pdf("./figures/logreg/THR50_surv_clusters/rfs/metabric_rfs_clusters_Q1vsQ4.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_sig_metabric_rfs_THR50_1_Q1vsQ4_clusters,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "cluster",
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           legend.labs = c('Q1', 'Q4'),
+           risk.table.y.text = FALSE, title = 'THR50 and METABRIC RFS by cluster: Q1 vs Q4')
+dev.off()
+
 ##############################################################################
 ## fit coxph model:
 
