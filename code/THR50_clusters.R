@@ -53,7 +53,7 @@ rownames(Pheno_metabric_forHeatmap) <- NULL
 
 AnnAll_metabric <- Pheno_metabric_forHeatmap %>% 
   as.data.frame() %>%
-  dplyr::select(Sample.ID, Pam50...Claudin.low.subtype, ER.status.measured.by.IHC, X3.Gene.classifier.subtype, HER2.Status, PR.Status, Neoplasm.Histologic.Grade) %>%
+  dplyr::select(Sample.ID, Pam50...Claudin.low.subtype, X3.Gene.classifier.subtype, HER2.Status, PR.Status, ER.status.measured.by.IHC, Neoplasm.Histologic.Grade) %>%
   column_to_rownames(var = "Sample.ID") %>%
   filter(Pam50...Claudin.low.subtype %in% c('Basal', 'claudin-low', 'Her2', 'LumA', 'LumB')) %>%
   dplyr::mutate(X3.Gene.classifier.subtype = as.factor(X3.Gene.classifier.subtype),
@@ -96,12 +96,15 @@ ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 # heatmap with clinical annotation
 pdf('./figures/logreg/THR50_clusters/THR50_heatmap_metabric.pdf', width=11, height=9)
 pheatmap(Expr_metabric_heatmap, 
-         scale = "column",
+         scale = "row",
          #color = rev(heat.colors(20)),
          color =ColPal,
          annotation_colors = ann_colors,
          cluster_cols = T, 
          cluster_rows = T, 
+         clustering_distance_cols = 'correlation',
+         clustering_distance_rows = 'correlation',
+         clustering_method = 'ward.D',
          show_colnames = F,
          show_rownames = T,
          annotation_col = AnnAll_metabric,
@@ -121,12 +124,15 @@ dev.off()
 #######################################################
 # get the 5 groups
 heat_metabric <- pheatmap(Expr_metabric_heatmap, 
-                          scale = "column",
+                          scale = "none",
                           #color = rev(heat.colors(20)),
                           color =ColPal,
                           annotation_colors = ann_colors,
                           cluster_cols = T, 
                           cluster_rows = T, 
+                          clustering_distance_cols = 'correlation',
+                          clustering_distance_rows = 'correlation',
+                          clustering_method = 'ward.D',
                           show_colnames = F,
                           show_rownames = T,
                           annotation_col = AnnAll_metabric,
@@ -140,8 +146,7 @@ heat_metabric <- pheatmap(Expr_metabric_heatmap,
                           cutree_cols = 5,
                           cutree_rows = 5,
                           breaks = seq(-1, 1, by = 0.1),
-                          main = ""
-)
+                          main = "")
 
 clusters_metabric <- as.data.frame(cbind(t(Expr_metabric_heatmap), 
                                          cluster = cutree(heat_metabric$tree_col, 
@@ -196,6 +201,33 @@ ggsurvplot(Fit_metabric_RFS,
            risk.table.y.text = FALSE, title = 'THR50 clusters and RFS')
 dev.off()
 
+#############
+# the same for PAM50 subtypes
+# OS
+Fit_metabric_PAM50_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Pam50...Claudin.low.subtype, data = survival_metabric)
+
+# RFS
+Fit_metabric_PAM50_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Pam50...Claudin.low.subtype, data = survival_metabric)
+
+pdf("./figures/logreg/THR50_clusters/metabric_os_PAM50.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_PAM50_os,
+           risk.table = FALSE,
+           pval = TRUE,
+           #legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'PAM50 subtypes and OS')
+dev.off()
 
 
+# plot RFS
+pdf("./figures/logreg/THR50_clusters/metabric_rfs_PAM50.pdf", width = 8, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_PAM50_RFS,
+           risk.table = FALSE,
+           pval = TRUE,
+           #legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_minimal(),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'PAM50 subtypes and RFS')
+dev.off()
 
