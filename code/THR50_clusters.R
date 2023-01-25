@@ -94,14 +94,14 @@ ColPal <- colorRampPalette(colors = rev(brewer.pal(11,"RdYlBu")))(20)
 ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
 # heatmap with clinical annotation
-pdf('./figures/logreg/THR50_clusters/THR50_heatmap_metabric.pdf', width=11, height=9)
-pheatmap(Expr_metabric_heatmap, 
-         scale = "row",
+tiff('./figures/logreg/THR50_clusters/THR50_heatmap_metabric.tiff', width=3000, height=2000, res = 300)
+pheatmap(Expr_metabric_heatmap,
+         scale = "none",
          #color = rev(heat.colors(20)),
          color =ColPal,
          annotation_colors = ann_colors,
-         cluster_cols = T, 
-         cluster_rows = T, 
+         cluster_cols = T,
+         cluster_rows = T,
          clustering_distance_cols = 'correlation',
          clustering_distance_rows = 'correlation',
          clustering_method = 'ward.D',
@@ -156,9 +156,48 @@ table(clusters_metabric$cluster)
 
 # add the cluster info to the phenotype table
 all(rownames(clusters_metabric) == rownames(Pheno_metabric))
-
 Pheno_metabric$cluster <- clusters_metabric$cluster
 
+# add the cluster info to the Ann dataframe and re-plot the heatmap
+all(rownames(clusters_metabric) == rownames(AnnAll_metabric))
+AnnAll_metabric$cluster <- as.factor(paste0('c', clusters_metabric$cluster))
+table(AnnAll_metabric$cluster)
+
+# re-order the annotation dataframe then the expression matrix by cluster
+#AnnAll_metabric <- AnnAll_metabric[order(AnnAll_metabric$cluster, decreasing = FALSE), ]
+#Expr_metabric_heatmap <- Expr_metabric_heatmap[, rownames(AnnAll_metabric)]
+
+
+ann_colors$cluster <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
+names(ann_colors$cluster) <- levels(AnnAll_metabric$cluster)
+
+# heatmap with clinical annotation
+tiff('./figures/logreg/THR50_clusters/THR50_heatmap_metabric_clusters.tiff', width=3000, height=2000, res = 300)
+pheatmap(Expr_metabric_heatmap, 
+         scale = "none",
+         #color = rev(heat.colors(20)),
+         color =ColPal,
+         annotation_colors = ann_colors,
+         cluster_cols = T, 
+         cluster_rows = T, 
+         clustering_distance_cols = 'correlation',
+         clustering_distance_rows = 'correlation',
+         clustering_method = 'ward.D',
+         show_colnames = F,
+         show_rownames = T,
+         annotation_col = AnnAll_metabric,
+         annotation_names_col = T,
+         #annotation_row = AnnAll_metabric,
+         annotation_names_row = T,
+         fontsize = 7,
+         #fontsize_col = 3,
+         fontsize_row = 10,
+         cex = 1,
+         cutree_cols = 5,
+         cutree_rows = 5,
+         breaks = seq(-1, 1, by = 0.1),
+         main = "")
+dev.off()
 #############################################################################################################
 ##############################################################################################################
 
@@ -178,11 +217,13 @@ Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Stat
 ############################################################################
 ############################################################################
 # plot OS
+cluster_colors <- as.vector(ann_colors$cluster)
 
-pdf("./figures/logreg/THR50_clusters/metabric_os_5clusters.pdf", width = 8, height = 8, onefile = F)
+pdf("./figures/logreg/THR50_clusters/metabric_os_5clusters.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
+           palette = cluster_colors,
            #legend.labs = c('prediction: 0', 'prediction: 1'),
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
