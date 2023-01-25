@@ -219,11 +219,13 @@ Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Stat
 # plot OS
 cluster_colors <- as.vector(ann_colors$cluster)
 
-pdf("./figures/logreg/THR50_clusters/metabric_os_5clusters.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/THR50_clusters/metabric_os_5clusters_10years.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
+           xlim = c(0,120),
+           #ylim = c(0.5, 1.00),
            #legend.labs = c('prediction: 0', 'prediction: 1'),
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
@@ -232,10 +234,12 @@ dev.off()
 
 
 # plot RFS
-pdf("./figures/logreg/THR50_clusters/metabric_rfs_5clusters.pdf", width = 8, height = 8, onefile = F)
+pdf("./figures/logreg/THR50_clusters/metabric_rfs_5clusters_10years.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,120),
            #legend.labs = c('prediction: 0', 'prediction: 1'),
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
@@ -254,6 +258,7 @@ pdf("./figures/logreg/THR50_clusters/metabric_os_PAM50.pdf", width = 8, height =
 ggsurvplot(Fit_metabric_PAM50_os,
            risk.table = FALSE,
            pval = TRUE,
+           #xlim = c(0,120),
            #legend.labs = c('prediction: 0', 'prediction: 1'),
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
@@ -266,6 +271,7 @@ pdf("./figures/logreg/THR50_clusters/metabric_rfs_PAM50.pdf", width = 8, height 
 ggsurvplot(Fit_metabric_PAM50_RFS,
            risk.table = FALSE,
            pval = TRUE,
+           #xlim = c(0,120),
            #legend.labs = c('prediction: 0', 'prediction: 1'),
            ggtheme = theme_minimal(),
            risk.table.y.text.col = FALSE,
