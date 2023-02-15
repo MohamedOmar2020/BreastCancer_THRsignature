@@ -264,6 +264,8 @@ dev.off()
 
 ##############################
 ## original PAM50 variable
+
+# OS
 pdf("./figures/logreg/PAM50_clusters/metabric_os_PAM50original_10years.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os_PAM50original,
            risk.table = FALSE,
@@ -280,7 +282,7 @@ ggsurvplot(Fit_metabric_os_PAM50original,
 dev.off()
 
 
-# plot RFS
+# RFS
 pdf("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original_10years.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_rfs_PAM50original,
            risk.table = FALSE,
