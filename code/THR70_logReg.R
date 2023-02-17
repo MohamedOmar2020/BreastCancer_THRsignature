@@ -639,7 +639,7 @@ dev.off()
 ####################################################
 # OS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_Q1vsQ4.tiff", width = 3000, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_Q1vsQ4.tiff", width = 3000, height = 2800, res = 300)
 ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ4_X3,
            risk.table = FALSE,
            pval = FALSE,
@@ -680,7 +680,7 @@ dev.off()
 ###############################################################
 # RFS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_X3_Q1vsQ4.tiff", width = 3000, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_X3_Q1vsQ4.tiff", width = 3000, height = 2800, res = 300)
 ggsurvplot(Fit_sig_metabric_rfs_THR70_Q1vsQ4_X3,
            risk.table = FALSE,
            pval = F,
