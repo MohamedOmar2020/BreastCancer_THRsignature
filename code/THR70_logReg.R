@@ -154,10 +154,12 @@ CoxData_tcga <- data.frame(Phenotype_tcga)
 
 # divide the probabilities into quartiles
 CoxData_metabric <- CoxData_metabric %>%
-  mutate(metabric_prob_THR70_quartiles = ntile(Train_prob_THR70, 4))
+  mutate(metabric_prob_THR70_quartiles = ntile(Train_prob_THR70, 4), 
+         metabric_prob_THR70_quintiles = ntile(Train_prob_THR70, 5))
 
 CoxData_tcga <- CoxData_tcga %>%
-  mutate(tcga_prob_THR70_quartiles = ntile(tcga_prob_THR70, 4))
+  mutate(tcga_prob_THR70_quartiles = ntile(tcga_prob_THR70, 4),
+         tcga_prob_THR70_quintiles = ntile(tcga_prob_THR70, 5))
 
 #CutPoint <- surv_cutpoint(data = CoxData, time = "Time", event = "Event", variables = "ResidualDisease_Score")
 #CutPoint
@@ -212,6 +214,9 @@ Fit_sig_metabric_os_THR70 <- survfit(Surv(Overall.Survival..Months., Overall.Sur
 ## by quartiles
 Fit_sig_metabric_os_THR70_quartiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quartiles, data = CoxData_metabric)
 
+## by quintiles
+Fit_sig_metabric_os_THR70_quintiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quintiles, data = CoxData_metabric)
+
 
 # RFS
 ## metabric all genes
@@ -219,6 +224,9 @@ Fit_sig_metabric_RFS_THR70 <- survfit(Surv(Relapse.Free.Status..Months., Relapse
 
 ## by quartiles
 Fit_sig_metabric_RFS_THR70_quartiles <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quartiles, data = CoxData_metabric)
+
+## by quintiles
+Fit_sig_metabric_RFS_THR70_quintiles <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quintiles, data = CoxData_metabric)
 
 #################################
 ## by clinical groups
@@ -233,6 +241,9 @@ CoxData_metabric_PAM <- CoxData_metabric %>%
 CoxData_metabric_PAM_Q1vsQ4_THR70 <- CoxData_metabric_PAM %>%
   filter(metabric_prob_THR70_quartiles %in% c('1', '4'))
 
+CoxData_metabric_PAM_Q1vsQ5_THR70 <- CoxData_metabric_PAM %>%
+  filter(metabric_prob_THR70_quintiles %in% c('1', '5'))
+
 
 # os: all
 Fit_sig_metabric_os_THR70_PAM <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR70 + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM)
@@ -240,8 +251,14 @@ Fit_sig_metabric_os_THR70_PAM <- survfit(Surv(Overall.Survival..Months., Overall
 # os: quartiles: all
 Fit_sig_metabric_os_THR70_quartiles_PAM <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quartiles + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM)
 
+# os: quintiles: all
+Fit_sig_metabric_os_THR70_quintiles_PAM <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quintiles + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM)
+
 # os: quartiles: Q1 vs Q4
 Fit_sig_metabric_os_THR70_Q1vsQ4_PAM <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quartiles + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM_Q1vsQ4_THR70)
+
+# os: quintiles: Q1 vs Q5
+Fit_sig_metabric_os_THR70_Q1vsQ5_PAM <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quintiles + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM_Q1vsQ5_THR70)
 
 ##########
 # rfs: all
@@ -250,8 +267,14 @@ Fit_sig_metabric_rfs_THR70_PAM <- survfit(Surv(Relapse.Free.Status..Months., Rel
 # os: quartiles: all
 Fit_sig_metabric_rfs_THR70_quartiles_PAM <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quartiles + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM)
 
+# rfs: quintiles: all
+Fit_sig_metabric_rfs_THR70_quintiles_PAM <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quintiles + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM)
+
 # rfs: quartiles: Q1 vs Q4
 Fit_sig_metabric_rfs_THR70_Q1vsQ4_PAM <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quartiles + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM_Q1vsQ4_THR70)
+
+# rfs: quintiles: Q1 vs Q5
+Fit_sig_metabric_rfs_THR70_Q1vsQ5_PAM <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quintiles + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM_Q1vsQ5_THR70)
 
 #############
 ## ER
@@ -262,14 +285,23 @@ Fit_sig_metabric_rfs_THR70_Q1vsQ4_PAM <- survfit(Surv(Relapse.Free.Status..Month
 CoxData_metabric_Q1vsQ4_THR70 <- CoxData_metabric %>%
   filter(metabric_prob_THR70_quartiles %in% c('1', '4'))
 
+CoxData_metabric_Q1vsQ5_THR70 <- CoxData_metabric %>%
+  filter(metabric_prob_THR70_quintiles %in% c('1', '5'))
+
 # os: all
 Fit_sig_metabric_os_THR70_ER <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR70 + ER.status.measured.by.IHC, data = CoxData_metabric)
 
 # os: quartiles: all
 Fit_sig_metabric_os_THR70_quartiles_ER <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quartiles + ER.status.measured.by.IHC, data = CoxData_metabric)
 
+# os: quintiles: all
+Fit_sig_metabric_os_THR70_quintiles_ER <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quintiles + ER.status.measured.by.IHC, data = CoxData_metabric)
+
 # os: quartiles: Q1 vs Q4
 Fit_sig_metabric_os_THR70_Q1vsQ4_ER <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quartiles + ER.status.measured.by.IHC, data = CoxData_metabric_Q1vsQ4_THR70)
+
+# os: quintiles: Q1 vs Q5
+Fit_sig_metabric_os_THR70_Q1vsQ5_ER <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quintiles + ER.status.measured.by.IHC, data = CoxData_metabric_Q1vsQ5_THR70)
 
 ##############
 # rfs: all
@@ -278,8 +310,14 @@ Fit_sig_metabric_rfs_THR70_ER <- survfit(Surv(Relapse.Free.Status..Months., Rela
 # rfs: quartiles: all
 Fit_sig_metabric_rfs_THR70_quartiles_ER <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quartiles + ER.status.measured.by.IHC, data = CoxData_metabric)
 
+# rfs: quintiles: all
+Fit_sig_metabric_rfs_THR70_quintiles_ER <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quintiles + ER.status.measured.by.IHC, data = CoxData_metabric)
+
 # rfs: quartiles: Q1 vs Q4
 Fit_sig_metabric_rfs_THR70_Q1vsQ4_ER <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quartiles + ER.status.measured.by.IHC, data = CoxData_metabric_Q1vsQ4_THR70)
+
+# rfs: quintiles: Q1 vs Q5
+Fit_sig_metabric_rfs_THR70_Q1vsQ5_ER <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quintiles + ER.status.measured.by.IHC, data = CoxData_metabric_Q1vsQ5_THR70)
 
 #######################################
 ## X3
@@ -290,8 +328,14 @@ Fit_sig_metabric_os_THR70_X3 <- survfit(Surv(Overall.Survival..Months., Overall.
 # os: quartiles: all
 Fit_sig_metabric_os_THR70_quartiles_X3 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quartiles + X3.Gene.classifier.subtype, data = CoxData_metabric)
 
+# os: quintiles: all
+Fit_sig_metabric_os_THR70_quintiles_X3 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quintiles + X3.Gene.classifier.subtype, data = CoxData_metabric)
+
 # os: quartiles: Q1 vs Q4
 Fit_sig_metabric_os_THR70_Q1vsQ4_X3 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quartiles + X3.Gene.classifier.subtype, data = CoxData_metabric_Q1vsQ4_THR70)
+
+# os: quintiles: Q1 vs Q5
+Fit_sig_metabric_os_THR70_Q1vsQ5_X3 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR70_quintiles + X3.Gene.classifier.subtype, data = CoxData_metabric_Q1vsQ5_THR70)
 
 ###########
 # rfs: all
@@ -300,8 +344,14 @@ Fit_sig_metabric_rfs_THR70_X3 <- survfit(Surv(Relapse.Free.Status..Months., Rela
 # rfs: quartiles: all
 Fit_sig_metabric_rfs_THR70_quartiles_X3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quartiles + X3.Gene.classifier.subtype, data = CoxData_metabric)
 
+# rfs: quintiles: all
+Fit_sig_metabric_rfs_THR70_quintiles_X3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quintiles + X3.Gene.classifier.subtype, data = CoxData_metabric)
+
 # rfs: quartiles: Q1 vs Q4
 Fit_sig_metabric_rfs_THR70_Q1vsQ4_X3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quartiles + X3.Gene.classifier.subtype, data = CoxData_metabric_Q1vsQ4_THR70)
+
+# rfs: quintiles: Q1 vs Q5
+Fit_sig_metabric_rfs_THR70_Q1vsQ5_X3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR70_quintiles + X3.Gene.classifier.subtype, data = CoxData_metabric_Q1vsQ5_THR70)
 
 ############################################################################
 ############################################################################
@@ -332,6 +382,21 @@ ggsurvplot(Fit_sig_metabric_os_THR70_quartiles,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR 50_1 (logistic regression) and METABRIC OS: quartiles'
+)
+dev.off()
+
+#############
+# by quintiles
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_os_quintiles.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR70_quintiles,
+           risk.table = FALSE,
+           pval = FALSE,
+           legend.labs = c('Q1', 'Q2', 'Q3', 'Q4', 'Q5'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC OS: quintiles'
 )
 dev.off()
 
@@ -366,7 +431,21 @@ ggsurvplot(Fit_sig_metabric_RFS_THR70_quartiles,
            )
 dev.off()
 
+########
+# by quintiles
 
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_rfs_quintiles.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR70_quintiles,
+           risk.table = FALSE,
+           pval = FALSE,
+           legend.labs = c('Q1', 'Q2', 'Q3', 'Q4', 'Q5'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC RFS: quintiles'
+)
+dev.off()
 
 ############################################################################
 ############################################################################
@@ -429,6 +508,24 @@ ggsurvplot(Fit_sig_metabric_os_THR70_quartiles_PAM,
            )
 dev.off()
 
+####################################################
+## OS: quintiles: all
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_os_PAM50_quintiles.tiff", width = 3200, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR70_quintiles_PAM,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "Pam50...Claudin.low.subtype",
+           legend.labs = c('Q1', 'Q2', 'Q3', 'Q4', 'Q5'),
+           legend.title	= 'Quintiles',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC OS by PAM50 subtypes: quintiles'
+)
+dev.off()
+
 ######################################################
 # OS: quartiles: Q1 vs Q4
 tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_PAM50_Q1vsQ4.tiff", width = 3200, height = 2200, res = 300)
@@ -445,6 +542,24 @@ ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ4_PAM,
            risk.table.y.text = FALSE, 
            #title = 'THR 50_1 and METABRIC OS by PAM50 subtypes: Q1 vs Q4'
            )
+dev.off()
+
+######################################################
+# OS: quintiles: Q1 vs Q5
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_os_PAM50_Q1vsQ5.tiff", width = 3200, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ5_PAM,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "Pam50...Claudin.low.subtype",
+           legend.labs = c('Q1', 'Q5'),
+           legend.title	= 'Quintiles',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC OS by PAM50 subtypes: Q1 vs Q5'
+)
 dev.off()
 
 #############################
@@ -464,6 +579,24 @@ ggsurvplot(Fit_sig_metabric_rfs_THR70_quartiles_PAM,
            risk.table.y.text = FALSE, 
            #title = 'THR 50_1 and METABRIC RFS by PAM50 subtypes: quartiles'
            )
+dev.off()
+
+####################################################
+## RFS: quintiles: all
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_rfs_PAM50_quintiles.tiff", width = 3200, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_rfs_THR70_quintiles_PAM,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "Pam50...Claudin.low.subtype",
+           legend.labs = c('Q1', 'Q2', 'Q3', 'Q4', 'Q5'),
+           legend.title	= 'Quintiles',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC RFS by PAM50 subtypes: quintiles'
+)
 dev.off()
 
 #############################
@@ -487,6 +620,26 @@ ggsurvplot(Fit_sig_metabric_rfs_THR70_Q1vsQ4_PAM,
 )
 dev.off()
 
+#############################
+# RFS: quintiles: Q1 vs Q5
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_rfs_PAM50_Q1vsQ5.tiff", width = 3200, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_rfs_THR70_Q1vsQ5_PAM,
+           risk.table = FALSE,
+           pval = T,
+           short.panel.labs = T,
+           facet.by = "Pam50...Claudin.low.subtype",
+           #legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
+           legend.title	= 'Quintiles',
+           pval.size = 15,
+           #break.x.by = 20,
+           palette = 'jco',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           legend.labs = c('Q1', 'Q5'),
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC RFS by PAM50 subtypes: Q1 vs Q5'
+)
+dev.off()
 ##############################################################################################
 ##############################################################################################
 ## ER
@@ -637,6 +790,24 @@ ggsurvplot(Fit_sig_metabric_os_THR70_quartiles_X3,
 dev.off()
 
 ####################################################
+## OS: quintiles: all
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_os_X3_quintiles.tiff", width = 3200, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR70_quintiles_X3,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "X3.Gene.classifier.subtype",
+           legend.labs = c('Q1', 'Q2', 'Q3', 'Q4', 'Q5'),
+           legend.title	= 'Quintiles',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC OS by X3 subtypes: quintiles'
+)
+dev.off()
+
+####################################################
 # OS: quartiles: Q1 vs Q4
 
 tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_Q1vsQ4.tiff", width = 3000, height = 2800, res = 300)
@@ -655,6 +826,23 @@ ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ4_X3,
            )
 dev.off()
 
+####################################################
+## OS: quintiles: Q1 vs Q5
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_os_X3_Q1vsQ5.tiff", width = 3200, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ5_X3,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "X3.Gene.classifier.subtype",
+           legend.labs = c('Q1', 'Q5'),
+           legend.title	= 'Quintiles',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC OS by X3 subtypes: Q1 vs Q5'
+)
+dev.off()
 
 ###############################################################
 # RFS: quartiles: all
@@ -676,6 +864,23 @@ ggsurvplot(Fit_sig_metabric_rfs_THR70_quartiles_X3,
 )
 dev.off()
 
+####################################################
+## RFS: quintiles: all
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_rfs_X3_quintiles.tiff", width = 3200, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_rfs_THR70_quintiles_X3,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "X3.Gene.classifier.subtype",
+           legend.labs = c('Q1', 'Q2', 'Q3', 'Q4', 'Q5'),
+           legend.title	= 'Quintiles',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC RFS by X3 subtypes: quintiles'
+)
+dev.off()
 
 ###############################################################
 # RFS: quartiles: Q1 vs Q4
@@ -698,17 +903,24 @@ ggsurvplot(Fit_sig_metabric_rfs_THR70_Q1vsQ4_X3,
 )
 dev.off()
 
-# pdf("./figures/logreg/logistic_regression_oct11/metabric/THR50_2/RFS/Q1_vs_Q4/THR50_2_metabric_rfs_X3_Q1vsQ4.pdf", width = 8, height = 8, onefile = F)
-# ggsurvplot(Fit_sig_metabric_rfs_THR50_2_Q1vsQ4_X3,
-#            risk.table = FALSE,
-#            pval = TRUE,
-#            short.panel.labs = T,
-#            facet.by = "X3.Gene.classifier.subtype",
-#            ggtheme = theme_minimal(),
-#            legend.labs = c('Q1', 'Q4'),
-#            risk.table.y.text.col = FALSE,
-#            risk.table.y.text = FALSE, title = 'THR 50_2 and METABRIC RFS by X3 classifier subtypes: Q1 vs Q4')
-# dev.off()
+####################################################
+## RFS: quintiles: Q1 vs Q5
+tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR70_quintiles/THR70_metabric_rfs_X3_Q1vsQ5.tiff", width = 3200, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_rfs_THR70_Q1vsQ5_X3,
+           risk.table = FALSE,
+           pval = TRUE,
+           short.panel.labs = T,
+           facet.by = "X3.Gene.classifier.subtype",
+           legend.labs = c('Q1', 'Q5'),
+           legend.title	= 'Quintiles',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           title = 'THR-70 and METABRIC RFS by X3 subtypes: Q1 vs Q5'
+)
+dev.off()
+
 
 
 ##############################################################################

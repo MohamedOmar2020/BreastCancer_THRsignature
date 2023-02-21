@@ -457,6 +457,9 @@ ggsurvplot(Fit_sig_metabric_RFS_THR50_quartiles,
            risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC RFS: quartiles')
 dev.off()
 
+########
+# by quintiles
+
 tiff("./figures/logreg/oct10/THR50_metabric_rfs_quintiles.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(Fit_sig_metabric_RFS_THR50_quintiles,
            risk.table = FALSE,
@@ -496,7 +499,7 @@ dev.off()
 
 
 pdf("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/2_groups/THR50_1_metabric_rfs_PAM50.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_rfs_THR50_1_PAM,
+ggsurvplot(Fit_sig_metabric_rfs_THR50_PAM,
            risk.table = FALSE,
            pval = TRUE,
            short.panel.labs = T,
@@ -544,16 +547,22 @@ dev.off()
 ######################################################
 # OS: quartiles: Q1 vs Q4
 
-pdf("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/OS/Q1_vs_Q4/THR50_1_metabric_os_PAM50_Q1vsQ4.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_os_THR50_1_Q1vsQ4_PAM,
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/OS/Q1_vs_Q4/THR50_1_metabric_os_PAM50_Q1vsQ4.tiff", width = 3200, height = 2200, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR50_Q1vsQ4_PAM,
            risk.table = FALSE,
            pval = TRUE,
            short.panel.labs = T,
            facet.by = "Pam50...Claudin.low.subtype",
-           ggtheme = theme_minimal(),
+           legend.title	= 'Quartiles',
+           pval.size = 15,
+           #break.x.by = 20,
+           palette = 'jco',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            legend.labs = c('Q1', 'Q4'),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR 50_1 and METABRIC OS by PAM50 subtypes: Q1 vs Q4')
+           risk.table.y.text = FALSE, 
+           #title = 'THR 50_1 and METABRIC OS by PAM50 subtypes: Q1 vs Q4'
+           )
 dev.off()
 
 ######################################################
@@ -630,7 +639,7 @@ ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_PAM,
 dev.off()
 
 #############################
-# RFS: quintiles: Q1 vs Q4
+# RFS: quintiles: Q1 vs Q5
 tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR50_quintiles/THR50_metabric_rfs_PAM50_Q1vsQ5.tiff", width = 3200, height = 3000, res = 300)
 ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ5_PAM,
            risk.table = FALSE,
@@ -815,16 +824,22 @@ dev.off()
 ####################################################
 # OS: quartiles: Q1 vs Q4
 
-pdf("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/OS/Q1_vs_Q4/THR50_1_metabric_os_X3_Q1vsQ4.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_os_THR50_1_Q1vsQ4_X3,
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/OS/Q1_vs_Q4/THR50_1_metabric_os_X3_Q1vsQ4.tiff", width = 3200, height = 2200, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR50_Q1vsQ4_X3,
            risk.table = FALSE,
            pval = TRUE,
            short.panel.labs = T,
            facet.by = "X3.Gene.classifier.subtype",
-           ggtheme = theme_minimal(),
+           legend.title	= 'Quartiles',
+           pval.size = 15,
+           #break.x.by = 20,
+           palette = 'jco',
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            legend.labs = c('Q1', 'Q4'),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR 50_1 and METABRIC OS by X3 classifier subtypes: Q1 vs Q4')
+           risk.table.y.text = FALSE, 
+           #title = 'THR 50_1 and METABRIC OS by PAM50 subtypes: Q1 vs Q4'
+)
 dev.off()
 
 ####################################################
