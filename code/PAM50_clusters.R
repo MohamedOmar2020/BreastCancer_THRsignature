@@ -57,13 +57,15 @@ AnnAll_metabric <- Pheno_metabric_forHeatmap %>%
   filter(Pam50...Claudin.low.subtype %in% c('Basal', 'claudin-low', 'Her2', 'LumA', 'LumB')) %>%
   dplyr::mutate(X3.Gene.classifier.subtype = as.factor(X3.Gene.classifier.subtype),
                 ER.status.measured.by.IHC = as.factor(ER.status.measured.by.IHC),
-                Pam50...Claudin.low.subtype = as.factor(Pam50...Claudin.low.subtype),
                 HER2.Status = as.factor(HER2.Status), 
                 PR.Status = as.factor(PR.Status),
                 #Overall.Survival.Status = as.factor(Overall.Survival.Status),
                 #Relapse.Free.Status = as.factor(Relapse.Free.Status), 
                 #Tumor.Stage = as.factor(Tumor.Stage), 
-                Neoplasm.Histologic.Grade = as.factor(Neoplasm.Histologic.Grade))
+                Neoplasm.Histologic.Grade = as.factor(Neoplasm.Histologic.Grade),
+                Pam50...Claudin.low.subtype = as.factor(Pam50...Claudin.low.subtype)
+                ) %>%
+  arrange(Pam50...Claudin.low.subtype)
 
 
 # filter and transpose the expression matrix
@@ -99,7 +101,7 @@ pheatmap(Expr_metabric_heatmap,
          #color = rev(heat.colors(20)),
          color =ColPal,
          annotation_colors = ann_colors,
-         cluster_cols = T,
+         cluster_cols = F,
          cluster_rows = T,
          clustering_distance_cols = 'correlation',
          clustering_distance_rows = 'correlation',
@@ -230,16 +232,16 @@ Fit_metabric_rfs_PAM50original <- survfit(Surv(Relapse.Free.Status..Months., Rel
 # plot OS
 cluster_colors <- as.vector(ann_colors$`PAM50 clusters`)
 
-pdf("./figures/logreg/PAM50_clusters/metabric_os_PAM50Clusters_10years.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/PAM50_clusters/metabric_os_PAM50Clusters.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
-           xlim = c(0,120),
+           #xlim = c(0,120),
            legend.labs = c('c1', 'c2', 'c3', 'c4', 'c5'),
            legend.title	= 'PAM50 clusters',
            pval.size = 12,
-           break.x.by = 20,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'PAM50 clusters and OS')
@@ -247,16 +249,16 @@ dev.off()
 
 
 # plot RFS
-pdf("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50Clusters_10years.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50Clusters.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
-           xlim = c(0,120),
+           #xlim = c(0,120),
            legend.labs = c('c1', 'c2', 'c3', 'c4', 'c5'),
            legend.title	= 'PAM50 clusters',
            pval.size = 12,
-           break.x.by = 20,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'PAM50 clusters and RFS')
@@ -266,35 +268,35 @@ dev.off()
 ## original PAM50 variable
 
 # OS
-pdf("./figures/logreg/PAM50_clusters/metabric_os_PAM50original_10years.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/PAM50_clusters/metabric_os_PAM50original.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os_PAM50original,
            risk.table = FALSE,
            pval = TRUE,
            #palette = cluster_colors,
-           xlim = c(0,120),
+           #xlim = c(0,120),
            legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
            legend.title	= 'PAM50 groups',
            pval.size = 12,
-           break.x.by = 20,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(17, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'PAM50 subtypes and OS')
+           risk.table.y.text = FALSE, title = 'Original PAM50 subtypes and OS')
 dev.off()
 
 
 # RFS
-pdf("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original_10years.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_rfs_PAM50original,
            risk.table = FALSE,
            pval = TRUE,
            #palette = cluster_colors,
-           xlim = c(0,120),
+           #xlim = c(0,120),
            legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
            legend.title	= 'PAM50 groups',
            pval.size = 12,
-           break.x.by = 20,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(17, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'PAM50 subtypes and RFS')
+           risk.table.y.text = FALSE, title = 'Original PAM50 subtypes and RFS')
 dev.off()
 
