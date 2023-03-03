@@ -23,6 +23,7 @@ library(survminer)
 library(survival)
 library(tidyverse)
 library(pheatmap)
+library(vtable)
 
 #################
 THR_signature <- readxl::read_xlsx("./data/THR Signatures_sep23.xlsx")
@@ -42,7 +43,17 @@ Data_metabric$group_metabric <- as.factor(Data_metabric$group_metabric)
 levels(Data_metabric$group_metabric) <- c('0', '1')
 colnames(Data_metabric)[colnames(Data_metabric) %in% c('group_metabric')] <- c('os')
 
-##########
+####
+# metabric summary
+sumtable(Pheno_metabric,
+         file='metabric_summary',
+         out = 'browser',
+         title='METABRIC Summary Statistics',
+         simple.kable=FALSE,
+         opts=list())
+
+
+####################
 ### tcga
 Data_tcga <- as.data.frame(cbind(t(Expr_tcga), group_tcga))
 Data_tcga$group_tcga <- as.factor(Data_tcga$group_tcga)
