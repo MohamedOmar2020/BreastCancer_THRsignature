@@ -260,3 +260,6 @@ ggsurvplot(Fit_metabric_RFS,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'THR50 clusters and RFS')
 dev.off()
+
+
+

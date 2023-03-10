@@ -159,13 +159,13 @@ all(rownames(cluster3_pheno) == colnames(cluster3_expr))
 summary(cluster3_pheno$Relapse.Free.Status..Months.)
 ####
 # c3 summary
-sumtable(Pheno_metabric,
-         group = 'THR clusters',
-         file='metabric_clusters_summary',
-         out = 'browser',
-         title='METABRIC clusters Summary Statistics',
-         simple.kable=FALSE,
-         opts=list())
+# sumtable(Pheno_metabric,
+#          group = 'THR clusters',
+#          file='metabric_clusters_summary',
+#          out = 'browser',
+#          title='METABRIC clusters Summary Statistics',
+#          simple.kable=FALSE,
+#          opts=list())
 
 #################################################################################################
 ## training
