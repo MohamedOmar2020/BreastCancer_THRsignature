@@ -1,6 +1,4 @@
 
-############################################################################
-
 
 # Clean the working directory
 rm(list = ls())
@@ -23,6 +21,7 @@ library(survminer)
 library(survival)
 library(tidyverse)
 library(pheatmap)
+library(glmnet)
 
 #################
 THR_signature <- readxl::read_xlsx("./data/THR Signatures_sep23.xlsx")
@@ -165,11 +164,27 @@ table(cluster3_pheno$c3_rfs_binary)
 
 ######################################
 # differential expression 
+design <- model.matrix( ~ cluster3_pheno$c3_rfs_binary)
+colnames(design)[2] <- "longVSshortSurvival"
+
+fit <- lmFit(cluster3_expr, design)
+
+fitted.ebayes <- eBayes(fit)
+
+c3_top20 <- topTable(fitted.ebayes, number = 20)
+c3_top20$gene <- rownames(c3_top20)
+
+write_csv(as.data.frame(c3_top20), file = './figures/c3_DE_THR50_RFS/c3_longVSshortSurv_DE.csv')
+library("writexl")
+write_xlsx(c3_top20,"./figures/c3_DE_THR50_RFS/c3_longVSshortSurv_DE.xlsx")
 
 
+c3_gns <- rownames(topTable(fitted.ebayes, number = 20))
 
+# genes in common with THR50
+summary(c3_gns %in% THR_50)
 
-
+#summary(decideTests(fitted.ebayes[,"longVSshortSurvival"],lfc=0))
 
 
 
@@ -187,33 +202,61 @@ table(cluster3_pheno$c3_rfs_binary)
 ## training
 
 ### combine in 1 dataset: Training
-RFS_c3 <- as.factor(cluster3_pheno$Relapse.Free.Status)
+RFS_c3 <- as.factor(cluster3_pheno$c3_rfs_binary)
 Data_c3 <- as.data.frame(cbind(t(cluster3_expr), RFS_c3))
 Data_c3$RFS_c3 <- as.factor(Data_c3$RFS_c3)
-levels(Data_c3$RFS_c3) <- c('0', '1')
+levels(Data_c3$RFS_c3) <- c('longSurv', 'shortSurv')
+table(Data_c3$RFS_c3)
+
+# the model
+model20_c3 <- glm(as.formula((paste("RFS_c3 ~", paste(c3_gns, collapse = "+")))), data = Data_c3, family = "binomial")
+summary(model20_c3)
+
 
 #####################################
 # the model
-THR50_model_c3 <- glm(as.formula((paste("RFS_c3 ~", paste(THR_50_fil, collapse = "+")))), data = Data_c3, family = "binomial")
-summary(THR50_model_c3)
+############################################################################
+# 
+# pred_c3 <- as.matrix(t(cluster3_expr))
+# fit <- cv.glmnet(x=pred_c3, y=RFS_c3, type.measure = "class", alpha = 0.5, family="binomial", nlambda=200)
+# 
+# plot(fit)
+# print(fit)
+# 
+# 
+# tmp_coeffs <- coef(fit, s=fit$lambda.1se)
+# Predictor_genes <- data.frame(name=tmp_coeffs@Dimnames[[1]][tmp_coeffs@i + 1], coefficient = tmp_coeffs@x)
+# Predictor_genes_sorted <- Predictor_genes[order(Predictor_genes$coefficient, decreasing = TRUE),]
+# save(Predictor_genes_sorted, file = "./Objs/Predictor_genes_ENR.rda")
+# 
+# 
+# lambda <- cv.glmnet(pred_c3, RFS_c3, alpha = 1, family="binomial")$lambda.1se
+# mod <- glmnet(pred_c3, RFS_c3, lambda = lambda, alpha = 1, family="binomial" )
+# 
+# 
+# # use the broom package to get the row names you want:
+# broom::tidy(mod) %>% 
+#   slice(-1) %>%  # drop the intercept
+#   arrange(desc(abs(estimate)))
+
 
 ############################################################################
 # Make predictions
 
-Train_prob_THR50_c3 <- THR50_model_c3 %>% predict(Data_c3 , type = "response")
+Train_prob_THR50_c3 <- model20_c3 %>% predict(Data_c3 , type = "response")
 
 ### Threshold
-thr_THR50_c3 <- coords(roc(RFS_c3, Train_prob_THR50_c3, levels = c("0", "1"), direction = "<"), "best")["threshold"]
+thr_THR50_c3 <- coords(roc(RFS_c3, Train_prob_THR50_c3, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR50_c3
 
 ### ROC Curve
-ROCTrain_THR50_c3 <- roc(RFS_c3, Train_prob_THR50_c3, plot = F, print.thres=thr_THR50_c3$threshold, print.auc=TRUE, print.auc.col="black", ci = T, levels = c("0", "1"), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROCTrain_THR50_c3 <- roc(RFS_c3, Train_prob_THR50_c3, plot = F, print.thres=thr_THR50_c3$threshold, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
 ROCTrain_THR50_c3
 
 ### Get predictions based on best threshold from ROC curve
-predClasses_THR50_c3 <- ifelse(Train_prob_THR50_c3 >= thr_THR50_c3$threshold, "1", "0")
+predClasses_THR50_c3 <- ifelse(Train_prob_THR50_c3 >= thr_THR50_c3$threshold, "longSurv", "shortSurv")
 table(predClasses_THR50_c3)
-predClasses_THR50_c3 <- factor(predClasses_THR50_c3, levels = c('0', '1'))
+predClasses_THR50_c3 <- factor(predClasses_THR50_c3, levels = c('longSurv', 'shortSurv'))
 
 ##########################
 ## Keep only the relevant information (Metastasis Event and Time)
@@ -236,7 +279,7 @@ Fit_sig_metabric_RFS_THR50_c3 <- survfit(Surv(Relapse.Free.Status..Months., Rela
 
 
 # plot OS
-tiff("./figures/c3/THR50_metabric_os_c3.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_os_c3.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(Fit_sig_metabric_os_THR50_c3,
            risk.table = FALSE,
            pval = TRUE,
@@ -245,13 +288,13 @@ ggsurvplot(Fit_sig_metabric_os_THR50_c3,
            risk.table.y.text.col = FALSE,
            palette = 'jco',
            risk.table.y.text = FALSE, 
-           title = 'OS in METABRIC c3'
+           title = 'OS in METABRIC in T1 class derived from THR50'
 )
 dev.off()
 
 ######################################
 # plot RFS
-tiff("./figures/c3/THR50_metabric_RFS_c3.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_RFS_c3.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(Fit_sig_metabric_RFS_THR50_c3,
            risk.table = FALSE,
            pval = TRUE,
@@ -260,7 +303,7 @@ ggsurvplot(Fit_sig_metabric_RFS_THR50_c3,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            palette = 'jco',
-           title = 'RFS in METABRIC c3'
+           title = 'RFS in METABRIC in T1 class derived from THR50'
 )
 dev.off()
 
@@ -288,9 +331,9 @@ Pheno_metabric2 <- Pheno_metabric2 %>%
 
 ## Keep only the relevant information (Metastasis Event and Time)
 survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Survival..Months.", 
-                                        "Relapse.Free.Status", "Relapse.Free.Status..Months.", 
-                                        "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
-                                        "X3.Gene.classifier.subtype", "THR.clusters")] 
+                                         "Relapse.Free.Status", "Relapse.Free.Status..Months.", 
+                                         "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
+                                         "X3.Gene.classifier.subtype", "THR.clusters")] 
 
 survival_metabric$THR.clusters <- as.factor(survival_metabric$THR.clusters)
 levels(survival_metabric$THR.clusters) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
@@ -304,23 +347,23 @@ Fit_metabric_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Stat
 # RFS
 Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters, data = survival_metabric)
 
-pdf("./figures/c3/metabric_os_5clusters_newC3_10yrs.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/c3_DE_THR50_RFS/metabric_os_5clusters_newC3.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
            #palette = cluster_colors,
-           xlim = c(0,120),
+           #xlim = c(0,120),
            legend.labs = c('T1_a', 'Ta_b', 'E3', 'E1', 'E4', 'E2'),
            legend.title	= 'THR clusters',
            pval.size = 12,
-           break.x.by = 20,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'THR50 clusters and OS')
 dev.off()
 
 ## RFS: 
-pdf("./figures/c3/metabric_rfs_5clusters_newC3.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/c3_DE_THR50_RFS/metabric_rfs_5clusters_newC3.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
