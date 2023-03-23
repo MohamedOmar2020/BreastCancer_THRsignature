@@ -173,6 +173,7 @@ levels(AnnAll_metabric$`THR clusters`) <- c('E3', 'E1', 'E2', 'E4', 'T1')
 # fix the color pallete to match that of THR50
 ann_colors$`THR clusters` <- c("#66A61E", "#E7298A", "#1B9E77" , "#D95F02", "#7570B3") 
 names(ann_colors$`THR clusters`) <- levels(AnnAll_metabric$`THR clusters`)
+table(AnnAll_metabric$`THR clusters`)
 
 # heatmap with clinical annotation
 tiff('./figures/logreg/THR70_clusters/THR70_heatmap_metabric_clusters.tiff', width=3000, height=2000, res = 300)
@@ -225,16 +226,16 @@ Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Stat
 # plot OS
 cluster_colors <- as.vector(ann_colors$`THR clusters`)
 
-pdf("./figures/logreg/THR70_clusters/metabric_os_5clusters_10years.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/THR70_clusters/metabric_os_5clusters.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
-           xlim = c(0,120),
+           #xlim = c(0,120),
            legend.labs = c('E3', 'E1', 'E2', 'E4', 'T1'),
            legend.title	= 'THR clusters',
            pval.size = 12,
-           break.x.by = 20,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'THR70 clusters and OS')
@@ -242,16 +243,16 @@ dev.off()
 
 
 # plot RFS
-pdf("./figures/logreg/THR70_clusters/metabric_rfs_5clusters_10years.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/THR70_clusters/metabric_rfs_5clusters.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
-           xlim = c(0,120),
+           #xlim = c(0,120),
            legend.labs = c('E3', 'E1', 'E2', 'E4', 'T1'),
            legend.title	= 'THR clusters',
            pval.size = 12,
-           break.x.by = 20,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'THR70 clusters and RFS')

@@ -177,7 +177,7 @@ levels(AnnAll_metabric$`THR clusters`) <- c('E3', 'E1', 'E4', 'E2', 'T1_a', 'T1_
 names(ann_colors$`THR clusters`) <- levels(AnnAll_metabric$`THR clusters`)
 
 # heatmap with clinical annotation
-tiff('./figures/c3/THR50_heatmap_metabric_clusters_new.tiff', width=3000, height=2000, res = 300)
+tiff('./figures/THR50_c3Split_noLogReg/THR50_heatmap_metabric_clusters_C3split_noLogReg.tiff', width=3000, height=2000, res = 300)
 pheatmap(Expr_metabric_heatmap, 
          scale = "none",
          #color = rev(heat.colors(20)),
@@ -228,7 +228,7 @@ Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Stat
 # plot OS
 cluster_colors <- as.vector(ann_colors$`THR clusters`)
 
-pdf("./figures/c3/metabric_os_5clusters_clustersFromHeatmap.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/THR50_c3Split_noLogReg/metabric_os_5clusters_clustersFromHeatmap.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
@@ -246,7 +246,7 @@ dev.off()
 
 
 # plot RFS
-pdf("./figures/c3/metabric_rfs_5clusters_clustersFromHeatmap.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/THR50_c3Split_noLogReg/metabric_rfs_5clusters_clustersFromHeatmap.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
