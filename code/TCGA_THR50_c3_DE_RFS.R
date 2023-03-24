@@ -36,56 +36,49 @@ THR_50 <- gsub('-', '', THR_50)
 load('./objs/forKTSP.rda')
 
 # fix gene names
-rownames(Expr_metabric)[grep('^ZNF652', rownames(Expr_metabric))]
+rownames(Expr_tcga)[grep('^ZNF652', rownames(Expr_tcga))]
 
 # filter the THR signatures to include only the genes present in the expr matrices
-THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_metabric)]
+THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_tcga)]
 
 #############################################################################################
 #############################################################################################
 ## heatmap (THR 50)
-Expr_metabric_heatmap <- Expr_metabric[THR_50_fil, ] 
+Expr_tcga_heatmap <- Expr_tcga[THR_50_fil, ] 
 
 # Create annotation for columns/samples based on some clinical variables:
-Pheno_metabric_forHeatmap <- Pheno_metabric
-rownames(Pheno_metabric_forHeatmap) <- NULL
+Pheno_tcga_forHeatmap <- Pheno_tcga
+rownames(Pheno_tcga_forHeatmap) <- NULL
 
-AnnAll_metabric <- Pheno_metabric_forHeatmap %>% 
+AnnAll_tcga <- Pheno_tcga_forHeatmap %>% 
   as.data.frame() %>%
-  dplyr::select(Sample.ID, Pam50...Claudin.low.subtype, X3.Gene.classifier.subtype, HER2.Status, PR.Status, ER.status.measured.by.IHC, Neoplasm.Histologic.Grade) %>%
-  column_to_rownames(var = "Sample.ID") %>%
-  filter(Pam50...Claudin.low.subtype %in% c('Basal', 'claudin-low', 'Her2', 'LumA', 'LumB')) %>%
-  dplyr::mutate(X3.Gene.classifier.subtype = as.factor(X3.Gene.classifier.subtype),
-                ER.status.measured.by.IHC = as.factor(ER.status.measured.by.IHC),
-                Pam50...Claudin.low.subtype = as.factor(Pam50...Claudin.low.subtype),
-                HER2.Status = as.factor(HER2.Status), 
-                PR.Status = as.factor(PR.Status),
-                #Overall.Survival.Status = as.factor(Overall.Survival.Status),
-                #Relapse.Free.Status = as.factor(Relapse.Free.Status), 
-                #Tumor.Stage = as.factor(Tumor.Stage), 
-                Neoplasm.Histologic.Grade = as.factor(Neoplasm.Histologic.Grade))
+  dplyr::select(X.Patient.Identifier, Subtype) %>%
+  dplyr:: mutate(Subtype = gsub('BRCA_', '', Subtype)) %>%
+  column_to_rownames(var = "X.Patient.Identifier") %>%
+  filter(Subtype %in% c('Basal', 'Her2', 'LumA', 'LumB')) %>%
+  dplyr::mutate(Subtype = as.factor(Subtype))
 
 
 # filter and transpose the expression matrix
-Expr_metabric_heatmap <- Expr_metabric_heatmap[, rownames(AnnAll_metabric)]
-Expr_metabric_heatmap_t <- t(Expr_metabric_heatmap)
+Expr_tcga_heatmap <- Expr_tcga_heatmap[, rownames(AnnAll_tcga)]
+Expr_tcga_heatmap_t <- t(Expr_tcga_heatmap)
 
 # filter pheno (above we remove normal and NC)
-Pheno_metabric <- Pheno_metabric[rownames(AnnAll_metabric), ]
+Pheno_tcga <- Pheno_tcga[rownames(AnnAll_tcga), ]
 
 # colors
 ann_colors = list()
-ann_colors$Pam50...Claudin.low.subtype <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(5)
-names(ann_colors$Pam50...Claudin.low.subtype) <- levels(AnnAll_metabric$Pam50...Claudin.low.subtype)
+ann_colors$Subtype <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(4)
+names(ann_colors$Subtype) <- levels(AnnAll_tcga$Subtype)
 
-ann_colors$ER.status.measured.by.IHC <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(2)
-names(ann_colors$ER.status.measured.by.IHC) <- levels(AnnAll_metabric$ER.status.measured.by.IHC)
+#ann_colors$ER.status.measured.by.IHC <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(2)
+#names(ann_colors$ER.status.measured.by.IHC) <- levels(AnnAll_tcga$ER.status.measured.by.IHC)
 
-ann_colors$X3.Gene.classifier.subtype <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(4)
-names(ann_colors$X3.Gene.classifier.subtype) <- levels(AnnAll_metabric$X3.Gene.classifier.subtype)
+#ann_colors$X3.Gene.classifier.subtype <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(4)
+#names(ann_colors$X3.Gene.classifier.subtype) <- levels(AnnAll_tcga$X3.Gene.classifier.subtype)
 
-ann_colors$Neoplasm.Histologic.Grade <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(3)
-names(ann_colors$Neoplasm.Histologic.Grade) <- levels(AnnAll_metabric$Neoplasm.Histologic.Grade)
+#ann_colors$Neoplasm.Histologic.Grade <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(3)
+#names(ann_colors$Neoplasm.Histologic.Grade) <- levels(AnnAll_tcga$Neoplasm.Histologic.Grade)
 
 
 breaksList = seq(-4, 4, by = 1)
@@ -95,7 +88,7 @@ ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
 #######################################################
 # get the 5 groups
-heat_metabric <- pheatmap(Expr_metabric_heatmap, 
+heat_tcga <- pheatmap(Expr_tcga_heatmap, 
                           scale = "none",
                           #color = rev(heat.colors(20)),
                           color =ColPal,
@@ -107,9 +100,9 @@ heat_metabric <- pheatmap(Expr_metabric_heatmap,
                           clustering_method = 'ward.D',
                           show_colnames = F,
                           show_rownames = T,
-                          annotation_col = AnnAll_metabric,
+                          annotation_col = AnnAll_tcga,
                           annotation_names_col = T,
-                          #annotation_row = AnnAll_metabric,
+                          #annotation_row = AnnAll_tcga,
                           annotation_names_row = T,
                           fontsize = 7,
                           #fontsize_col = 3,
@@ -121,35 +114,62 @@ heat_metabric <- pheatmap(Expr_metabric_heatmap,
                           breaks = seq(-1, 1, by = 0.1),
                           main = "")
 
-clusters_metabric <- as.data.frame(cbind(t(Expr_metabric_heatmap), 
-                                         'THR clusters' = cutree(heat_metabric$tree_col, 
+clusters_tcga <- as.data.frame(cbind(t(Expr_tcga_heatmap), 
+                                         'THR clusters' = cutree(heat_tcga$tree_col, 
                                                                  k = 5)))
 
-table(clusters_metabric$`THR clusters`)
+table(clusters_tcga$`THR clusters`)
 
 # add the cluster info to the phenotype table
-all(rownames(clusters_metabric) == rownames(Pheno_metabric))
-Pheno_metabric$`THR clusters` <- clusters_metabric$`THR clusters`
+all(rownames(clusters_tcga) == rownames(Pheno_tcga))
+Pheno_tcga$`THR clusters` <- clusters_tcga$`THR clusters`
 
 # add the cluster info to the Ann dataframe and re-plot the heatmap
-all(rownames(clusters_metabric) == rownames(AnnAll_metabric))
-AnnAll_metabric$`THR clusters` <- as.factor(paste0('c', clusters_metabric$`THR clusters`))
-table(AnnAll_metabric$`THR clusters`)
+all(rownames(clusters_tcga) == rownames(AnnAll_tcga))
+AnnAll_tcga$`THR clusters` <- as.factor(paste0('c', clusters_tcga$`THR clusters`))
+table(AnnAll_tcga$`THR clusters`)
 
 # re-order the annotation dataframe then the expression matrix by cluster
-#AnnAll_metabric <- AnnAll_metabric[order(AnnAll_metabric$cluster, decreasing = FALSE), ]
-#Expr_metabric_heatmap <- Expr_metabric_heatmap[, rownames(AnnAll_metabric)]
+#AnnAll_tcga <- AnnAll_tcga[order(AnnAll_tcga$cluster, decreasing = FALSE), ]
+#Expr_tcga_heatmap <- Expr_tcga_heatmap[, rownames(AnnAll_tcga)]
 
 
 ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
-levels(AnnAll_metabric$`THR clusters`) <- c('E3', 'E1', 'T1', 'E4', 'E2')
-names(ann_colors$`THR clusters`) <- levels(AnnAll_metabric$`THR clusters`)
+#levels(AnnAll_tcga$`THR clusters`) <- c('E3', 'E1', 'T1', 'E4', 'E2')
+names(ann_colors$`THR clusters`) <- levels(AnnAll_tcga$`THR clusters`)
 
+# heatmap with cluster annotation
+tiff('./figures/THR50_original_clusters/THR50_heatmap_tcga_clusters.tiff', width=3000, height=2000, res = 300)
+pheatmap(Expr_tcga_heatmap, 
+         scale = "none",
+         #color = rev(heat.colors(20)),
+         color =ColPal,
+         annotation_colors = ann_colors,
+         cluster_cols = T, 
+         cluster_rows = T, 
+         clustering_distance_cols = 'correlation',
+         clustering_distance_rows = 'correlation',
+         clustering_method = 'ward.D',
+         show_colnames = F,
+         show_rownames = T,
+         annotation_col = AnnAll_tcga,
+         annotation_names_col = T,
+         #annotation_row = AnnAll_metabric,
+         annotation_names_row = T,
+         fontsize = 7,
+         #fontsize_col = 3,
+         fontsize_row = 8,
+         cex = 1,
+         cutree_cols = 5,
+         cutree_rows = 5,
+         breaks = seq(-1, 1, by = 0.1),
+         main = "")
+dev.off()
 
 #############################################################################################################
 # get cluster 3 with crossing curves
-cluster3_pheno <- Pheno_metabric[Pheno_metabric$`THR clusters` == '3', ]
-cluster3_expr <- Expr_metabric[, rownames(cluster3_pheno)]
+cluster3_pheno <- Pheno_tcga[Pheno_tcga$`THR clusters` == '3', ]
+cluster3_expr <- Expr_tcga[, rownames(cluster3_pheno)]
 
 all(rownames(cluster3_pheno) == colnames(cluster3_expr))
 
@@ -199,11 +219,11 @@ summary(c3_gns %in% THR_50)
 
 ####
 # c3 summary
-# sumtable(Pheno_metabric,
+# sumtable(Pheno_tcga,
 #          group = 'THR clusters',
-#          file='metabric_clusters_summary',
+#          file='tcga_clusters_summary',
 #          out = 'browser',
-#          title='METABRIC clusters Summary Statistics',
+#          title='tcga clusters Summary Statistics',
 #          simple.kable=FALSE,
 #          opts=list())
 
@@ -221,6 +241,7 @@ table(Data_c3$RFS_c3)
 model20_c3 <- glm(as.formula((paste("RFS_c3 ~", paste(c3_gns, collapse = "+")))), data = Data_c3, family = "binomial")
 summary(model20_c3)
 
+save(model20_c3, file = './objs/THR50_20_model_c3.rda')
 
 #####################################
 # the model
@@ -273,7 +294,7 @@ cluster3_pheno <- cbind(cluster3_pheno[, c("Overall.Survival.Status", "Overall.S
                         Train_prob_THR50_c3, predClasses_THR50_c3)
 
 
-CoxData_metabric_c3 <- data.frame(cluster3_pheno)
+CoxData_tcga_c3 <- data.frame(cluster3_pheno)
 
 ##########################################################################################
 ##########################################################################################
@@ -281,15 +302,15 @@ CoxData_metabric_c3 <- data.frame(cluster3_pheno)
 ## survival analysis for just c3
 
 # OS
-Fit_sig_metabric_os_THR50_c3 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR50_c3, data = CoxData_metabric_c3)
+Fit_sig_tcga_os_THR50_c3 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR50_c3, data = CoxData_tcga_c3)
 
 # RFS
-Fit_sig_metabric_RFS_THR50_c3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR50_c3, data = CoxData_metabric_c3)
+Fit_sig_tcga_RFS_THR50_c3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR50_c3, data = CoxData_tcga_c3)
 
 
 # plot OS
-tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_os_c3.tiff", width = 3000, height = 3000, res = 300)
-ggsurvplot(Fit_sig_metabric_os_THR50_c3,
+tiff("./figures/c3_DE_THR50_RFS/THR50_tcga_os_c3.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_tcga_os_THR50_c3,
            risk.table = FALSE,
            pval = TRUE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
@@ -297,14 +318,14 @@ ggsurvplot(Fit_sig_metabric_os_THR50_c3,
            risk.table.y.text.col = FALSE,
            palette = 'jco',
            risk.table.y.text = FALSE, 
-           title = 'OS in METABRIC in T1 class derived from THR50'
+           title = 'OS in tcga in T1 class derived from THR50'
 )
 dev.off()
 
 ######################################
 # plot RFS
-tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_RFS_c3.tiff", width = 3000, height = 3000, res = 300)
-ggsurvplot(Fit_sig_metabric_RFS_THR50_c3,
+tiff("./figures/c3_DE_THR50_RFS/THR50_tcga_RFS_c3.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_tcga_RFS_THR50_c3,
            risk.table = FALSE,
            pval = TRUE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
@@ -312,7 +333,7 @@ ggsurvplot(Fit_sig_metabric_RFS_THR50_c3,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            palette = 'jco',
-           title = 'RFS in METABRIC in T1 class derived from THR50'
+           title = 'RFS in tcga in T1 class derived from THR50'
 )
 dev.off()
 
@@ -327,10 +348,10 @@ rownames(c3) <- rownames(cluster3_pheno)
 
 
 # merge
-Pheno_metabric$`THR clusters`[Pheno_metabric$`THR clusters` == '3'] <- NA
-Pheno_metabric2 <- merge(x = c3, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
+Pheno_tcga$`THR clusters`[Pheno_tcga$`THR clusters` == '3'] <- NA
+Pheno_tcga2 <- merge(x = c3, y = Pheno_tcga, by="Sample.ID", all.y = TRUE)
 
-Pheno_metabric2 <- Pheno_metabric2 %>% 
+Pheno_tcga2 <- Pheno_tcga2 %>% 
   mutate(`THR clusters` = as.factor(`THR clusters`), THR.clusters = as.factor(THR.clusters)) %>%
   mutate(THR.clusters = coalesce(THR.clusters,`THR clusters`))
 
@@ -339,25 +360,25 @@ Pheno_metabric2 <- Pheno_metabric2 %>%
 ## survival analysis
 
 ## Keep only the relevant information (Metastasis Event and Time)
-survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Survival..Months.", 
+survival_tcga <- Pheno_tcga2[, c("Overall.Survival.Status", "Overall.Survival..Months.", 
                                          "Relapse.Free.Status", "Relapse.Free.Status..Months.", 
                                          "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
                                          "X3.Gene.classifier.subtype", "THR.clusters")] 
 
-survival_metabric$THR.clusters <- as.factor(survival_metabric$THR.clusters)
-levels(survival_metabric$THR.clusters) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
+survival_tcga$THR.clusters <- as.factor(survival_tcga$THR.clusters)
+levels(survival_tcga$THR.clusters) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
 
 
 cluster_colors <- as.vector(ann_colors$THR.clusters)
 
 # OS
-Fit_metabric_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters, data = survival_metabric)
+Fit_tcga_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters, data = survival_tcga)
 
 # RFS
-Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters, data = survival_metabric)
+Fit_tcga_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters, data = survival_tcga)
 
-pdf("./figures/c3_DE_THR50_RFS/metabric_os_5clusters_newC3.pdf", width = 10, height = 8, onefile = F)
-ggsurvplot(Fit_metabric_os,
+pdf("./figures/c3_DE_THR50_RFS/tcga_os_5clusters_newC3.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_tcga_os,
            risk.table = FALSE,
            pval = TRUE,
            #palette = cluster_colors,
@@ -372,8 +393,8 @@ ggsurvplot(Fit_metabric_os,
 dev.off()
 
 ## RFS: 
-pdf("./figures/c3_DE_THR50_RFS/metabric_rfs_5clusters_newC3.pdf", width = 10, height = 8, onefile = F)
-ggsurvplot(Fit_metabric_RFS,
+pdf("./figures/c3_DE_THR50_RFS/tcga_rfs_5clusters_newC3.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_tcga_RFS,
            risk.table = FALSE,
            pval = TRUE,
            #palette = cluster_colors,
@@ -391,21 +412,21 @@ dev.off()
 ##############################################################
 ## heatmap
 
-Expr_metabric_heatmap <- Expr_metabric[THR_50_fil, ] 
+Expr_tcga_heatmap <- Expr_tcga[THR_50_fil, ] 
 
 # Create annotation for columns/samples based on some clinical variables:
-Pheno_metabric3 <- merge(x = c3, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
+Pheno_tcga3 <- merge(x = c3, y = Pheno_tcga, by="Sample.ID", all.y = TRUE)
 
-Pheno_metabric3 <- Pheno_metabric3 %>% 
+Pheno_tcga3 <- Pheno_tcga3 %>% 
   mutate(`THR clusters` = as.factor(`THR clusters`), THR.clusters = as.factor(THR.clusters)) %>%
   mutate(THR.clusters = coalesce(THR.clusters,`THR clusters`))
 
-rownames(Pheno_metabric3) <- Pheno_metabric3$Sample.ID
+rownames(Pheno_tcga3) <- Pheno_tcga3$Sample.ID
 
-Pheno_metabric_forHeatmap <- Pheno_metabric3
-rownames(Pheno_metabric_forHeatmap) <- NULL
+Pheno_tcga_forHeatmap <- Pheno_tcga3
+rownames(Pheno_tcga_forHeatmap) <- NULL
 
-AnnAll_metabric <- Pheno_metabric_forHeatmap %>% 
+AnnAll_tcga <- Pheno_tcga_forHeatmap %>% 
   as.data.frame() %>%
   dplyr::select(Sample.ID, Pam50...Claudin.low.subtype, X3.Gene.classifier.subtype, HER2.Status, PR.Status, ER.status.measured.by.IHC, Neoplasm.Histologic.Grade) %>%
   column_to_rownames(var = "Sample.ID") %>%
@@ -421,35 +442,35 @@ AnnAll_metabric <- Pheno_metabric_forHeatmap %>%
                 Neoplasm.Histologic.Grade = as.factor(Neoplasm.Histologic.Grade))
 
 # add the cluster info to the Ann dataframe and re-plot the heatmap
-all(rownames(Pheno_metabric3) == rownames(AnnAll_metabric))
-levels(Pheno_metabric3$THR.clusters) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
-AnnAll_metabric$THR.clusters <- Pheno_metabric3$THR.clusters
-table(AnnAll_metabric$THR.clusters)
+all(rownames(Pheno_tcga3) == rownames(AnnAll_tcga))
+levels(Pheno_tcga3$THR.clusters) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
+AnnAll_tcga$THR.clusters <- Pheno_tcga3$THR.clusters
+table(AnnAll_tcga$THR.clusters)
 
 # filter and transpose the expression matrix
-Expr_metabric_heatmap <- Expr_metabric_heatmap[, rownames(AnnAll_metabric)]
-Expr_metabric_heatmap_t <- t(Expr_metabric_heatmap)
+Expr_tcga_heatmap <- Expr_tcga_heatmap[, rownames(AnnAll_tcga)]
+Expr_tcga_heatmap_t <- t(Expr_tcga_heatmap)
 
 # filter pheno (above we remove normal and NC)
-Pheno_metabric <- Pheno_metabric[rownames(AnnAll_metabric), ]
+Pheno_tcga <- Pheno_tcga[rownames(AnnAll_tcga), ]
 
 # colors
 ann_colors = list()
 ann_colors$Pam50...Claudin.low.subtype <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(5)
-names(ann_colors$Pam50...Claudin.low.subtype) <- levels(AnnAll_metabric$Pam50...Claudin.low.subtype)
+names(ann_colors$Pam50...Claudin.low.subtype) <- levels(AnnAll_tcga$Pam50...Claudin.low.subtype)
 
 ann_colors$ER.status.measured.by.IHC <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(2)
-names(ann_colors$ER.status.measured.by.IHC) <- levels(AnnAll_metabric$ER.status.measured.by.IHC)
+names(ann_colors$ER.status.measured.by.IHC) <- levels(AnnAll_tcga$ER.status.measured.by.IHC)
 
 ann_colors$X3.Gene.classifier.subtype <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(4)
-names(ann_colors$X3.Gene.classifier.subtype) <- levels(AnnAll_metabric$X3.Gene.classifier.subtype)
+names(ann_colors$X3.Gene.classifier.subtype) <- levels(AnnAll_tcga$X3.Gene.classifier.subtype)
 
 ann_colors$Neoplasm.Histologic.Grade <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(3)
-names(ann_colors$Neoplasm.Histologic.Grade) <- levels(AnnAll_metabric$Neoplasm.Histologic.Grade)
+names(ann_colors$Neoplasm.Histologic.Grade) <- levels(AnnAll_tcga$Neoplasm.Histologic.Grade)
 
 ann_colors$THR.clusters <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(6)
-#levels(AnnAll_metabric$`THR clusters`) <- c('E3', 'E1', 'T1', 'E4', 'E2')
-names(ann_colors$THR.clusters) <- levels(AnnAll_metabric$THR.clusters)
+#levels(AnnAll_tcga$`THR clusters`) <- c('E3', 'E1', 'T1', 'E4', 'E2')
+names(ann_colors$THR.clusters) <- levels(AnnAll_tcga$THR.clusters)
 
 
 breaksList = seq(-4, 4, by = 1)
@@ -457,8 +478,8 @@ ColPal <- colorRampPalette(colors = rev(brewer.pal(11,"RdYlBu")))(20)
 ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
 # heatmap with clinical annotation
-tiff('./figures/c3/THR50_heatmap_metabric_clusters_newC3.tiff', width=3000, height=2000, res = 300)
-pheatmap(Expr_metabric_heatmap, 
+tiff('./figures/c3/THR50_heatmap_tcga_clusters_newC3.tiff', width=3000, height=2000, res = 300)
+pheatmap(Expr_tcga_heatmap, 
          scale = "none",
          #color = rev(heat.colors(20)),
          color =ColPal,
@@ -470,9 +491,9 @@ pheatmap(Expr_metabric_heatmap,
          clustering_method = 'ward.D',
          show_colnames = F,
          show_rownames = T,
-         annotation_col = AnnAll_metabric,
+         annotation_col = AnnAll_tcga,
          annotation_names_col = T,
-         #annotation_row = AnnAll_metabric,
+         #annotation_row = AnnAll_tcga,
          annotation_names_row = T,
          fontsize = 7,
          #fontsize_col = 3,
@@ -483,7 +504,5 @@ pheatmap(Expr_metabric_heatmap,
          breaks = seq(-1, 1, by = 0.1),
          main = "")
 dev.off()
-
-
 
 

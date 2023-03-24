@@ -25,8 +25,8 @@ Pheno_metabric <- read.delim("./data/brca_metabric_cbioportal/brca_metabric_clin
 ################
 # Load the TCGA expression and Phenotype data
 Expr_tcga <- read.delim("./data/brca_tcga/data_mrna_seq_v2_rsem_zscores_ref_all_samples.txt")
-Pheno_tcga <- read.delim("./data/brca_tcga/data_clinical_patient.txt")
-Pheno_tcga <- Pheno_tcga[-c(1:4), ]
+Pheno_tcga <- read.delim("./data/brca_tcga/brca_tcga_clinical_data.tsv")
+#Pheno_tcga <- Pheno_tcga[-c(1:4), ]
 
 ###########################
 ## Annotation: metabric
@@ -96,12 +96,14 @@ table(group_metabric)
 ################
 ## Modify the Phenotype data: tcga
 
-Pheno_tcga$X.Patient.Identifier <- gsub("\\-", "\\.", Pheno_tcga$X.Patient.Identifier)
-rownames(Pheno_tcga) <- Pheno_tcga$X.Patient.Identifier
+Pheno_tcga$Patient.ID <- gsub("\\-", "\\.", Pheno_tcga$Patient.ID)
+#rownames(Pheno_tcga) <- Pheno_tcga$Patient.ID
+Pheno_tcga <- Pheno_tcga[!duplicated(Pheno_tcga$Patient.ID), ]
+rownames(Pheno_tcga) <- Pheno_tcga$Patient.ID
 CommonSamples <- intersect(colnames(Expr_tcga), rownames(Pheno_tcga))
 Pheno_tcga <- Pheno_tcga[CommonSamples, ]
 
-Pheno_tcga$Progression.Free.Status <- gsub("\\:.+", "", Pheno_tcga$Progression.Free.Status)
+Pheno_tcga$Disease.Free.Status <- gsub("\\:.+", "", Pheno_tcga$Disease.Free.Status)
 Pheno_tcga$Overall.Survival.Status <- gsub("\\:.+", "", Pheno_tcga$Overall.Survival.Status)
 
 all(rownames(Pheno_tcga) == colnames(Expr_tcga))
@@ -110,13 +112,13 @@ Expr_tcga <- as.matrix(Expr_tcga)
 
 ################
 ## Keep only the relevant information (Metastasis Event and Time)
-Pheno_tcga$Progression.Free.Status <- as.numeric(Pheno_tcga$Progression.Free.Status)
+Pheno_tcga$Disease.Free.Status <- as.numeric(Pheno_tcga$Disease.Free.Status)
 Pheno_tcga$Overall.Survival.Status <- as.numeric(Pheno_tcga$Overall.Survival.Status)
 
-table(Pheno_tcga$Progression.Free.Status)
+table(Pheno_tcga$Disease.Free.Status)
 table(Pheno_tcga$Overall.Survival.Status)
 
-Pheno_tcga$Progress.Free.Survival..Months. <- as.numeric(Pheno_tcga$Progress.Free.Survival..Months.)
+Pheno_tcga$Disease.Free..Months. <- as.numeric(Pheno_tcga$Disease.Free..Months.)
 Pheno_tcga$Overall.Survival..Months. <- as.numeric(Pheno_tcga$Overall.Survival..Months.)
 
 group_tcga <- as.factor(Pheno_tcga$Overall.Survival.Status)
