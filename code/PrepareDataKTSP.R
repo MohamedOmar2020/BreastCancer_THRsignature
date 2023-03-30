@@ -28,6 +28,14 @@ Expr_tcga <- read.delim("./data/brca_tcga/data_mrna_seq_v2_rsem_zscores_ref_all_
 Pheno_tcga <- read.delim("./data/brca_tcga/brca_tcga_clinical_data.tsv")
 #Pheno_tcga <- Pheno_tcga[-c(1:4), ]
 
+
+summary(Pheno_metabric$Overall.Survival..Months.)
+summary(Pheno_metabric$Relapse.Free.Status..Months.)
+
+summary(Pheno_tcga$Overall.Survival..Months.)
+summary(Pheno_tcga$Disease.Free..Months)
+
+
 ###########################
 ## Annotation: metabric
 head(rownames(Expr_metabric))
@@ -112,6 +120,9 @@ Expr_tcga <- as.matrix(Expr_tcga)
 
 ################
 ## Keep only the relevant information (Metastasis Event and Time)
+table(Pheno_tcga$Disease.Free.Status)
+table(Pheno_tcga$Overall.Survival.Status)
+
 Pheno_tcga$Disease.Free.Status <- as.numeric(Pheno_tcga$Disease.Free.Status)
 Pheno_tcga$Overall.Survival.Status <- as.numeric(Pheno_tcga$Overall.Survival.Status)
 

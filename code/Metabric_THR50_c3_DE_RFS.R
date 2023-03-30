@@ -221,6 +221,10 @@ table(Data_c3$RFS_c3)
 model20_c3 <- glm(as.formula((paste("RFS_c3 ~", paste(c3_gns, collapse = "+")))), data = Data_c3, family = "binomial")
 summary(model20_c3)
 
+CTLA4_model_c3 <- glm(as.formula((paste("RFS_c3 ~")), data = Data_c3, family = "binomial")
+summary(CTLA4_model_c3)
+
+
 save(model20_c3, file = './objs/THR50_20_model_c3.rda')
 
 #####################################

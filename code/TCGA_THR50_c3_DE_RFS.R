@@ -41,6 +41,22 @@ rownames(Expr_tcga)[grep('^ZNF652', rownames(Expr_tcga))]
 # filter the THR signatures to include only the genes present in the expr matrices
 THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_tcga)]
 
+#######################################
+## read TCGA PAM50
+Pam50_tcga <- read.delim('data/brca_tcga/data_clinical_patient.txt') 
+Pam50_tcga <- Pam50_tcga[-c(1:4), ]
+Pam50_tcga$Patient.ID <- gsub("\\-", "\\.", Pam50_tcga$X.Patient.Identifier)
+Pam50_tcga <- Pam50_tcga[, c('Patient.ID', 'Subtype')]
+
+# merge with TCGA pheno table
+summary(Pheno_tcga$Patient.ID %in% Pam50_tcga$Patient.ID)
+
+Pheno_tcga <- merge(Pheno_tcga, Pam50_tcga, by = "Patient.ID")
+
+table(Pheno_tcga$Subtype)
+table(Pam50_tcga$Subtype)
+
+
 #############################################################################################
 #############################################################################################
 ## heatmap (THR 50)
@@ -52,11 +68,23 @@ rownames(Pheno_tcga_forHeatmap) <- NULL
 
 AnnAll_tcga <- Pheno_tcga_forHeatmap %>% 
   as.data.frame() %>%
-  dplyr::select(X.Patient.Identifier, Subtype) %>%
-  dplyr:: mutate(Subtype = gsub('BRCA_', '', Subtype)) %>%
-  column_to_rownames(var = "X.Patient.Identifier") %>%
-  filter(Subtype %in% c('Basal', 'Her2', 'LumA', 'LumB')) %>%
-  dplyr::mutate(Subtype = as.factor(Subtype))
+  dplyr::select(Patient.ID, ER.Status.By.IHC, PR.status.by.ihc, HER2.fish.status, IHC.HER2, Subtype) %>%
+  filter(Subtype %in% c('BRCA_Basal', 'BRCA_Her2', 'BRCA_LumA', 'BRCA_LumB')) %>%
+  filter(ER.Status.By.IHC %in% c('Negative', 'Positive')) %>%
+  filter(PR.status.by.ihc %in% c('Negative', 'Positive')) %>%
+  dplyr:: mutate(Subtype = gsub('BRCA_', '', Subtype),
+  Pam50_subtypes = as.factor(Subtype),
+  IHC.HER2 = as.factor(IHC.HER2), 
+  HER2.fish.status = as.factor(HER2.fish.status),
+  ER.Status.By.IHC = as.factor(ER.Status.By.IHC),
+  PR.status.by.ihc = as.factor(PR.status.by.ihc)
+  ) %>%
+  column_to_rownames(var = "Patient.ID") 
+  
+
+table(AnnAll_tcga$Pam50_subtypes)
+table(AnnAll_tcga$ER.Status.By.IHC)
+table(AnnAll_tcga$PR.status.by.ihc)
 
 
 # filter and transpose the expression matrix
@@ -68,11 +96,11 @@ Pheno_tcga <- Pheno_tcga[rownames(AnnAll_tcga), ]
 
 # colors
 ann_colors = list()
-ann_colors$Subtype <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(4)
-names(ann_colors$Subtype) <- levels(AnnAll_tcga$Subtype)
+ann_colors$Pam50_subtypes <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(4)
+names(ann_colors$Pam50_subtypes) <- levels(AnnAll_tcga$Pam50_subtypes)
 
-#ann_colors$ER.status.measured.by.IHC <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(2)
-#names(ann_colors$ER.status.measured.by.IHC) <- levels(AnnAll_tcga$ER.status.measured.by.IHC)
+ann_colors$ER.Status.By.IHC <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(2)
+names(ann_colors$ER.Status.By.IHC) <- levels(AnnAll_tcga$ER.Status.By.IHC)
 
 #ann_colors$X3.Gene.classifier.subtype <- colorRampPalette(colors = rev(brewer.pal(8,"RdYlBu")))(4)
 #names(ann_colors$X3.Gene.classifier.subtype) <- levels(AnnAll_tcga$X3.Gene.classifier.subtype)
@@ -135,11 +163,10 @@ table(AnnAll_tcga$`THR clusters`)
 
 
 ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
-#levels(AnnAll_tcga$`THR clusters`) <- c('E3', 'E1', 'T1', 'E4', 'E2')
 names(ann_colors$`THR clusters`) <- levels(AnnAll_tcga$`THR clusters`)
 
 # heatmap with cluster annotation
-tiff('./figures/THR50_original_clusters/THR50_heatmap_tcga_clusters.tiff', width=3000, height=2000, res = 300)
+tiff('./figures/tcga/THR50_original_clusters/THR50_heatmap_tcga_clusters.tiff', width=3000, height=2000, res = 300)
 pheatmap(Expr_tcga_heatmap, 
          scale = "none",
          #color = rev(heat.colors(20)),
@@ -165,6 +192,40 @@ pheatmap(Expr_tcga_heatmap,
          breaks = seq(-1, 1, by = 0.1),
          main = "")
 dev.off()
+
+# another one with T and E annotation
+levels(AnnAll_tcga$`THR clusters`) <- c('E3', 'E1', 'E4', 'E2', 'T1')
+ann_colors$`THR clusters` <- c('#66a61e', "#E7298A", '#D95F02', "#1B9E77", '#7570b3')
+
+names(ann_colors$`THR clusters`) <- levels(AnnAll_tcga$`THR clusters`)
+
+tiff('./figures/tcga/THR50_original_clusters/THR50_heatmap_tcga_clusters_E.tiff', width=3000, height=2000, res = 300)
+pheatmap(Expr_tcga_heatmap, 
+         scale = "none",
+         #color = rev(heat.colors(20)),
+         color =ColPal,
+         annotation_colors = ann_colors,
+         cluster_cols = T, 
+         cluster_rows = T, 
+         clustering_distance_cols = 'correlation',
+         clustering_distance_rows = 'correlation',
+         clustering_method = 'ward.D',
+         show_colnames = F,
+         show_rownames = T,
+         annotation_col = AnnAll_tcga,
+         annotation_names_col = T,
+         #annotation_row = AnnAll_metabric,
+         annotation_names_row = T,
+         fontsize = 7,
+         #fontsize_col = 3,
+         fontsize_row = 8,
+         cex = 1,
+         cutree_cols = 5,
+         cutree_rows = 5,
+         breaks = seq(-1, 1, by = 0.1),
+         main = "")
+dev.off()
+
 
 #############################################################################################################
 # get cluster 3 with crossing curves
