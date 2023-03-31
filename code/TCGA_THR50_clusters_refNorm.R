@@ -43,10 +43,10 @@ load('./objs/forKTSP.rda')
 ###################
 
 # fix gene names
-rownames(Expr_tcga_refDip)[grep('^ZNF652', rownames(Expr_tcga_refDip))]
+rownames(Expr_tcga_refNorm)[grep('^ZNF652', rownames(Expr_tcga_refNorm))]
 
 # filter the THR signatures to include only the genes present in the expr matrices
-THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_tcga_refDip)]
+THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_tcga_refNorm)]
 
 #######################################
 ## read TCGA PAM50
@@ -84,7 +84,7 @@ Pheno_tcga <- Pheno_tcga[!(Pheno_tcga$Cancer.Type.Detailed %in% c('Adenoid Cysti
 #############################################################################################
 #############################################################################################
 ## heatmap (THR 50)
-Expr_tcga_refDip_heatmap <- Expr_tcga_refDip[THR_50_fil, ] 
+Expr_tcga_refNorm_heatmap <- Expr_tcga_refNorm[THR_50_fil, ] 
 
 # Create annotation for columns/samples based on some clinical variables:
 Pheno_tcga_forHeatmap <- Pheno_tcga
@@ -112,8 +112,8 @@ table(AnnAll_tcga$PR.status.by.ihc)
 
 
 # filter and transpose the expression matrix
-Expr_tcga_refDip_heatmap <- Expr_tcga_refDip_heatmap[, rownames(AnnAll_tcga)]
-Expr_tcga_refDip_heatmap_t <- t(Expr_tcga_refDip_heatmap)
+Expr_tcga_refNorm_heatmap <- Expr_tcga_refNorm_heatmap[, rownames(AnnAll_tcga)]
+Expr_tcga_refNorm_heatmap_t <- t(Expr_tcga_refNorm_heatmap)
 
 # filter pheno (above we remove normal and NC)
 Pheno_tcga <- Pheno_tcga[rownames(AnnAll_tcga), ]
@@ -140,7 +140,7 @@ ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
 #######################################################
 # get the 5 groups
-heat_tcga <- pheatmap(Expr_tcga_refDip_heatmap, 
+heat_tcga <- pheatmap(Expr_tcga_refNorm_heatmap, 
                       scale = "none",
                       #color = rev(heat.colors(20)),
                       color =ColPal,
@@ -166,7 +166,7 @@ heat_tcga <- pheatmap(Expr_tcga_refDip_heatmap,
                       breaks = seq(-1, 1, by = 0.1),
                       main = "")
 
-clusters_tcga <- as.data.frame(cbind(t(Expr_tcga_refDip_heatmap), 
+clusters_tcga <- as.data.frame(cbind(t(Expr_tcga_refNorm_heatmap), 
                                      'THR clusters' = cutree(heat_tcga$tree_col, 
                                                              k = 5)))
 
@@ -183,15 +183,15 @@ table(AnnAll_tcga$`THR clusters`)
 
 # re-order the annotation dataframe then the expression matrix by cluster
 #AnnAll_tcga <- AnnAll_tcga[order(AnnAll_tcga$cluster, decreasing = FALSE), ]
-#Expr_tcga_refDip_heatmap <- Expr_tcga_refDip_heatmap[, rownames(AnnAll_tcga)]
+#Expr_tcga_refNorm_heatmap <- Expr_tcga_refNorm_heatmap[, rownames(AnnAll_tcga)]
 
 
 ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
 names(ann_colors$`THR clusters`) <- levels(AnnAll_tcga$`THR clusters`)
 
 # heatmap with cluster annotation
-tiff('./figures/tcga/THR50_original_clusters/THR50_heatmap_tcga_clusters_refDip.tiff', width=3000, height=2000, res = 300)
-pheatmap(Expr_tcga_refDip_heatmap, 
+tiff('./figures/tcga/THR50_original_clusters/THR50_heatmap_tcga_clusters_refNorm.tiff', width=3000, height=2000, res = 300)
+pheatmap(Expr_tcga_refNorm_heatmap, 
          scale = "none",
          #color = rev(heat.colors(20)),
          color = ColPal,
@@ -223,8 +223,8 @@ ann_colors$`THR clusters` <- c('#66a61e', "#E7298A", '#D95F02', "#1B9E77", '#757
 
 names(ann_colors$`THR clusters`) <- levels(AnnAll_tcga$`THR clusters`)
 
-tiff('./figures/tcga/THR50_original_clusters/THR50_heatmap_tcga_clusters_E_refDip.tiff', width=3000, height=2000, res = 300)
-pheatmap(Expr_tcga_refDip_heatmap, 
+tiff('./figures/tcga/THR50_original_clusters/THR50_heatmap_tcga_clusters_E_refNorm.tiff', width=3000, height=2000, res = 300)
+pheatmap(Expr_tcga_refNorm_heatmap, 
          scale = "none",
          #color = rev(heat.colors(20)),
          color =ColPal,
@@ -311,7 +311,7 @@ Fit_tcga_DFS <- survfit(Surv(Disease.Free..Months., Disease.Free.Status) ~ as.fa
 # plot OS
 cluster_colors <- as.vector(ann_colors$`THR clusters`)
 
-pdf("./figures/tcga/THR50_original_clusters/tcga_os_5clusters_refDip.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/tcga/THR50_original_clusters/tcga_os_5clusters_refNorm.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_tcga_os,
            risk.table = FALSE,
            pval = TRUE,
@@ -328,7 +328,7 @@ dev.off()
 
 
 # plot RFS
-pdf("./figures/tcga/THR50_original_clusters/tcga_dfs_5clusters_refDip.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/tcga/THR50_original_clusters/tcga_dfs_5clusters_refNorm.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_tcga_DFS,
            risk.table = FALSE,
            pval = TRUE,
@@ -353,7 +353,7 @@ dev.off()
 
 Fit_tcga_os_ER <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ ER.Status.By.IHC, data = survival_tcga)
 
-pdf("./figures/tcga/THR50_original_clusters/tcga_os_ERstatus_refDip.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/tcga/THR50_original_clusters/tcga_os_ERstatus_refNorm.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_tcga_os_ER,
            risk.table = FALSE,
            pval = TRUE,
@@ -373,7 +373,7 @@ dev.off()
 
 Fit_tcga_DFS_ER <- survfit(Surv(Disease.Free..Months., Disease.Free.Status) ~ ER.Status.By.IHC, data = survival_tcga)
 
-pdf("./figures/tcga/THR50_original_clusters/tcga_dfs_ERstatus_refDip.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/tcga/THR50_original_clusters/tcga_dfs_ERstatus_refNorm.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_tcga_DFS_ER,
            risk.table = FALSE,
            pval = TRUE,
@@ -394,7 +394,7 @@ dev.off()
 
 Fit_tcga_os_Pam50 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Pam50_subtypes, data = survival_tcga)
 
-pdf("./figures/tcga/THR50_original_clusters/tcga_os_pam50_refDip.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/tcga/THR50_original_clusters/tcga_os_pam50_refNorm.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_tcga_os_Pam50,
            risk.table = FALSE,
            pval = TRUE,
@@ -414,7 +414,7 @@ dev.off()
 
 Fit_tcga_DFS_Pam50 <- survfit(Surv(Disease.Free..Months., Disease.Free.Status) ~ Pam50_subtypes, data = survival_tcga)
 
-pdf("./figures/tcga/THR50_original_clusters/tcga_dfs_pam50_refDip.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/tcga/THR50_original_clusters/tcga_dfs_pam50_refNorm.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_tcga_DFS_Pam50,
            risk.table = FALSE,
            pval = TRUE,
