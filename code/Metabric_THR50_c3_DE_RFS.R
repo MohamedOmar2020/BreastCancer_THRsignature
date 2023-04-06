@@ -179,10 +179,10 @@ c3_top200$gene <- rownames(c3_top200)
 
 #write_csv(as.data.frame(c3_top20), file = './figures/c3_DE_THR50_RFS/c3_longVSshortSurv_DE.csv')
 library("writexl")
-write_xlsx(c3_top20,"./figures/c3_DE_THR50_RFS/c3_longVSshortSurv_DE.xlsx")
+write_xlsx(c3_top20,"./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE.xlsx")
 
 # save top200 DE genes
-write_xlsx(c3_top200,"./figures/c3_DE_THR50_RFS/c3_longVSshortSurv_DE_top200.xlsx")
+write_xlsx(c3_top200,"./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE_top200.xlsx")
 
 
 
