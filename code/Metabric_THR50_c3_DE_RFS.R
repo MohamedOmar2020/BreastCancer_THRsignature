@@ -184,10 +184,34 @@ write_xlsx(c3_top20,"./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE.xlsx"
 # save top200 DE genes
 write_xlsx(c3_top200,"./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE_top200.xlsx")
 
+#############################################################
+# genes in common () THR50 I20 and THR70 I20
+############################################################
+THR70_c3_top20 <- readxl::read_xlsx("./figures/T1_DE_THR70_RFS/THR70_T1_longVSshortSurv_DE.xlsx")
+
+I20common <- intersect(THR70_c3_top20$gene, c3_top20$gene)
+I20common
+
+#############################################################
+# THR56 + I6
+############################################################
+# load THR56
+load('./objs/THR56.rda')
+
+# join I6 with THR56
+THR56_I6 <- c(THR_56, I20common)
+
+#############################################################
+# THR56 + I20
+############################################################
+# load THR56
+load('./objs/THR56.rda')
+
+# join I6 with THR56
+THR56_I20 <- c(THR_56, rownames(c3_top20))
 
 
-
-
+####################################################
 c3_gns <- rownames(topTable(fitted.ebayes, number = 20))
 
 # genes in common with THR50
@@ -209,6 +233,7 @@ summary(c3_gns %in% THR_50)
 
 #################################################################################################
 ## training
+#################################################################################################
 
 ### combine in 1 dataset: Training
 RFS_c3 <- as.factor(cluster3_pheno$c3_rfs_binary)
@@ -217,21 +242,55 @@ Data_c3$RFS_c3 <- as.factor(Data_c3$RFS_c3)
 levels(Data_c3$RFS_c3) <- c('longSurv', 'shortSurv')
 table(Data_c3$RFS_c3)
 
-# the model
+################################
+# I20 model
+################################
 model20_c3 <- glm(as.formula((paste("RFS_c3 ~", paste(c3_gns, collapse = "+")))), data = Data_c3, family = "binomial")
 summary(model20_c3)
 save(model20_c3, file = './objs/THR50_20_model_c3.rda')
 
+################################
+# I6 model
+################################
+model_I6_common <- glm(as.formula((paste("RFS_c3 ~", paste(I20common, collapse = "+")))), data = Data_c3, family = "binomial")
+summary(model_I6_common)
+save(model_I6_common, file = './objs/model_I6_common_appOnTHR50.rda')
 
+################################
+# THR56_I6 model
+################################
+model_THR56_I6 <- glm(as.formula((paste("RFS_c3 ~", paste(THR56_I6, collapse = "+")))), data = Data_c3, family = "binomial")
+summary(model_THR56_I6)
+save(model_THR56_I6, file = './objs/model_THR56_I6.rda')
+
+################################
+# THR56_I20 model
+################################
+model_THR56_I20 <- glm(as.formula((paste("RFS_c3 ~", paste(THR56_I20, collapse = "+")))), data = Data_c3, family = "binomial")
+summary(model_THR56_I20)
+save(model_THR56_I20, file = './objs/model_THR56_I20.rda')
+
+################################
+# CTLA4 model
+################################
 CTLA4_model_c3 <- glm(RFS_c3 ~ CTLA4, data = Data_c3, family = "binomial")
 summary(CTLA4_model_c3)
 
+################################
+# CTLA4_ICOS_CXCL13 model
+################################
 CTLA4_ICOS_CXCL13_model_c3 <- glm(RFS_c3 ~ CTLA4+ICOS+CXCL13, data = Data_c3, family = "binomial")
 summary(CTLA4_ICOS_CXCL13_model_c3)
 
+################################
+# KLF7 model
+################################
 KLF7_model_c3 <- glm(RFS_c3 ~ KLF7, data = Data_c3, family = "binomial")
 summary(KLF7_model_c3)
 
+################################
+# ZNF627 model
+################################
 ZNF627_model_c3 <- glm(RFS_c3 ~ ZNF627, data = Data_c3, family = "binomial")
 summary(ZNF627_model_c3)
 
@@ -266,6 +325,9 @@ summary(ZNF627_model_c3)
 # Make predictions
 
 Train_prob_THR50_c3_model20 <- model20_c3 %>% predict(Data_c3 , type = "response")
+Train_prob_THR50_c3_model_I6_common <- model_I6_common %>% predict(Data_c3 , type = "response")
+Train_prob_THR50_c3_model_THR56_I6 <- model_THR56_I6 %>% predict(Data_c3 , type = "response")
+Train_prob_THR50_c3_model_THR56_I20 <- model_THR56_I20 %>% predict(Data_c3 , type = "response")
 Train_prob_THR50_c3_CTLA4 <- CTLA4_model_c3 %>% predict(Data_c3 , type = "response")
 Train_prob_THR50_c3_CTLA4_ICOS_CXCL13 <- CTLA4_ICOS_CXCL13_model_c3 %>% predict(Data_c3 , type = "response")
 Train_prob_THR50_c3_KLF7 <- KLF7_model_c3 %>% predict(Data_c3 , type = "response")
@@ -273,6 +335,9 @@ Train_prob_THR50_c3_ZNF627 <- ZNF627_model_c3 %>% predict(Data_c3 , type = "resp
 
 ### Threshold
 thr_THR50_c3_model20 <- coords(roc(RFS_c3, Train_prob_THR50_c3_model20, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+thr_THR50_c3_model_I6_common <- coords(roc(RFS_c3, Train_prob_THR50_c3_model_I6_common, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+thr_THR50_c3_model_THR56_I6 <- coords(roc(RFS_c3, Train_prob_THR50_c3_model_THR56_I6, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+thr_THR50_c3_model_THR56_I20 <- coords(roc(RFS_c3, Train_prob_THR50_c3_model_THR56_I20, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR50_c3_CTLA4 <- coords(roc(RFS_c3, Train_prob_THR50_c3_CTLA4, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR50_c3_CTLA4_ICOS_CXCL13 <- coords(roc(RFS_c3, Train_prob_THR50_c3_CTLA4_ICOS_CXCL13, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR50_c3_KLF7 <- coords(roc(RFS_c3, Train_prob_THR50_c3_KLF7, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
@@ -283,6 +348,19 @@ thr_THR50_c3_ZNF627 <- coords(roc(RFS_c3, Train_prob_THR50_c3_ZNF627, levels = c
 ROCTrain_THR50_c3_model20 <- roc(RFS_c3, Train_prob_THR50_c3_model20, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
 ROCTrain_THR50_c3_model20
 
+### ROC Curve
+ROCTrain_THR50_c3_model_I6_common <- roc(RFS_c3, Train_prob_THR50_c3_model_I6_common, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROCTrain_THR50_c3_model_I6_common
+
+### ROC Curve
+ROCTrain_THR50_c3_model_THR56_I6 <- roc(RFS_c3, Train_prob_THR50_c3_model_THR56_I6, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROCTrain_THR50_c3_model_THR56_I6
+
+### ROC Curve
+ROCTrain_THR50_c3_model_THR56_I20 <- roc(RFS_c3, Train_prob_THR50_c3_model_THR56_I20, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROCTrain_THR50_c3_model_THR56_I20
+
+### ROC Curve
 ROCTrain_THR50_c3_CTLA4 <- roc(RFS_c3, Train_prob_THR50_c3_CTLA4, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
 ROCTrain_THR50_c3_CTLA4
 
@@ -299,6 +377,18 @@ ROCTrain_THR50_c3_ZNF627
 predClasses_THR50_c3_model20 <- ifelse(Train_prob_THR50_c3_model20 >= thr_THR50_c3_model20$threshold, "longSurv", "shortSurv")
 table(predClasses_THR50_c3_model20)
 predClasses_THR50_c3_model20 <- factor(predClasses_THR50_c3_model20, levels = c('longSurv', 'shortSurv'))
+
+predClasses_THR50_c3_model_I6_common <- ifelse(Train_prob_THR50_c3_model_I6_common >= thr_THR50_c3_model_I6_common$threshold, "longSurv", "shortSurv")
+table(predClasses_THR50_c3_model_I6_common)
+predClasses_THR50_c3_model_I6_common <- factor(predClasses_THR50_c3_model_I6_common, levels = c('longSurv', 'shortSurv'))
+
+predClasses_THR50_c3_model_THR56_I6 <- ifelse(Train_prob_THR50_c3_model_THR56_I6 >= thr_THR50_c3_model_THR56_I6$threshold, "longSurv", "shortSurv")
+table(predClasses_THR50_c3_model_THR56_I6)
+predClasses_THR50_c3_model_THR56_I6 <- factor(predClasses_THR50_c3_model_THR56_I6, levels = c('longSurv', 'shortSurv'))
+
+predClasses_THR50_c3_model_THR56_I20 <- ifelse(Train_prob_THR50_c3_model_THR56_I20 >= thr_THR50_c3_model_THR56_I20$threshold, "longSurv", "shortSurv")
+table(predClasses_THR50_c3_model_THR56_I20)
+predClasses_THR50_c3_model_THR56_I20 <- factor(predClasses_THR50_c3_model_THR56_I20, levels = c('longSurv', 'shortSurv'))
 
 predClasses_THR50_c3_CTLA4 <- ifelse(Train_prob_THR50_c3_CTLA4 >= thr_THR50_c3_CTLA4$threshold, "longSurv", "shortSurv")
 table(predClasses_THR50_c3_CTLA4)
@@ -320,6 +410,9 @@ predClasses_THR50_c3_ZNF627 <- factor(predClasses_THR50_c3_ZNF627, levels = c('l
 ## Keep only the relevant information (Metastasis Event and Time)
 cluster3_pheno <- cbind(cluster3_pheno[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype")], 
                         Train_prob_THR50_c3_model20, predClasses_THR50_c3_model20,
+                        Train_prob_THR50_c3_model_I6_common, predClasses_THR50_c3_model_I6_common,
+                        Train_prob_THR50_c3_model_THR56_I6, predClasses_THR50_c3_model_THR56_I6,
+                        Train_prob_THR50_c3_model_THR56_I20, predClasses_THR50_c3_model_THR56_I20,
                         Train_prob_THR50_c3_CTLA4, predClasses_THR50_c3_CTLA4,
                         Train_prob_THR50_c3_CTLA4_ICOS_CXCL13, predClasses_THR50_c3_CTLA4_ICOS_CXCL13,
                         Train_prob_THR50_c3_KLF7, predClasses_THR50_c3_KLF7,
@@ -371,6 +464,126 @@ ggsurvplot(Fit_sig_metabric_RFS_THR50_c3_model20,
            risk.table.y.text = FALSE, 
            palette = 'jco',
            title = 'RFS in METABRIC in T1 class derived from THR50: 20 genes model'
+)
+dev.off()
+
+#########################################
+# Model I6 common
+#########################################
+
+# OS
+Fit_sig_metabric_os_THR50_c3_model_I6_common <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR50_c3_model_I6_common, data = CoxData_metabric_c3)
+
+# RFS
+Fit_sig_metabric_RFS_THR50_c3_model_I6_common <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR50_c3_model_I6_common, data = CoxData_metabric_c3)
+
+
+# plot OS
+tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_os_c3_model_I6.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR50_c3_model_I6_common,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           title = 'OS in METABRIC in T1 class derived from THR50: I6'
+)
+dev.off()
+
+######################################
+# plot RFS
+tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_rfs_c3_model_I6.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR50_c3_model_I6_common,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           title = 'RFS in METABRIC in T1 class derived from THR50: I6'
+)
+dev.off()
+
+#########################################
+# Model THR56_I6 
+#########################################
+
+# OS
+Fit_sig_metabric_os_THR50_c3_model_THR56_I6 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR50_c3_model_THR56_I6, data = CoxData_metabric_c3)
+
+# RFS
+Fit_sig_metabric_RFS_THR50_c3_model_THR56_I6 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR50_c3_model_THR56_I6, data = CoxData_metabric_c3)
+
+
+# plot OS
+tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_os_c3_model_THR56_I6.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR50_c3_model_THR56_I6,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           title = 'OS in METABRIC in T1 class derived from THR50: THR56 and I6'
+)
+dev.off()
+
+######################################
+# plot RFS
+tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_rfs_c3_model_THR56_I6.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR50_c3_model_THR56_I6,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           title = 'RFS in METABRIC in T1 class derived from THR50: THR56 and I6'
+)
+dev.off()
+
+#########################################
+# Model THR56_I20
+#########################################
+
+# OS
+Fit_sig_metabric_os_THR50_c3_model_THR56_I20 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR50_c3_model_THR56_I20, data = CoxData_metabric_c3)
+
+# RFS
+Fit_sig_metabric_RFS_THR50_c3_model_THR56_I20 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR50_c3_model_THR56_I20, data = CoxData_metabric_c3)
+
+
+# plot OS
+tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_os_c3_model_THR56_I20.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR50_c3_model_THR56_I20,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           title = 'OS in METABRIC in T1 class derived from THR50: THR56 and I20'
+)
+dev.off()
+
+######################################
+# plot RFS
+tiff("./figures/c3_DE_THR50_RFS/THR50_metabric_rfs_c3_model_THR56_I20.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR50_c3_model_THR56_I20,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           title = 'RFS in METABRIC in T1 class derived from THR50: THR56 and I20'
 )
 dev.off()
 
@@ -543,6 +756,15 @@ dev.off()
 cluster3_pheno$THR_clusters_model20 <- as.factor(cluster3_pheno$predClasses_THR50_c3_model20)
 levels(cluster3_pheno$THR_clusters_model20) <- c('3_1', '3_2')
 
+cluster3_pheno$THR_clusters_model_I6_common <- as.factor(cluster3_pheno$predClasses_THR50_c3_model_I6_common)
+levels(cluster3_pheno$THR_clusters_model_I6_common) <- c('3_1', '3_2')
+
+cluster3_pheno$THR_clusters_model_THR56_I6 <- as.factor(cluster3_pheno$predClasses_THR50_c3_model_THR56_I6)
+levels(cluster3_pheno$THR_clusters_model_THR56_I6) <- c('3_1', '3_2')
+
+cluster3_pheno$THR_clusters_model_THR56_I20 <- as.factor(cluster3_pheno$predClasses_THR50_c3_model_THR56_I20)
+levels(cluster3_pheno$THR_clusters_model_THR56_I20) <- c('3_1', '3_2')
+
 cluster3_pheno$THR_clusters_CTLA4 <- as.factor(cluster3_pheno$predClasses_THR50_c3_CTLA4)
 levels(cluster3_pheno$THR_clusters_CTLA4) <- c('3_1', '3_2')
 
@@ -557,6 +779,9 @@ levels(cluster3_pheno$THR_clusters_ZNF627) <- c('3_1', '3_2')
 
 
 c3 <- data.frame(THR_clusters_model20 = cluster3_pheno$THR_clusters_model20,
+                 THR_clusters_model_I6 = cluster3_pheno$THR_clusters_model_I6_common,
+                 THR_clusters_model_THR56_I6 = cluster3_pheno$THR_clusters_model_THR56_I6,
+                 THR_clusters_model_THR56_I20 = cluster3_pheno$THR_clusters_model_THR56_I20,
                  THR_clusters_CTLA4 = cluster3_pheno$THR_clusters_CTLA4,
                  THR_clusters_CTLA4_ICOS_CXCL13 = cluster3_pheno$THR_clusters_CTLA4_ICOS_CXCL13,
                  THR_clusters_KLF7 = cluster3_pheno$THR_clusters_KLF7,
@@ -575,6 +800,9 @@ Pheno_metabric2 <- merge(x = c3, y = Pheno_metabric, by="Sample.ID", all.y = TRU
 Pheno_metabric2 <- Pheno_metabric2 %>% 
   mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_model20 = as.factor(THR_clusters_model20)) %>%
   mutate(THR.clusters_model20Merged = coalesce(THR_clusters_model20,`THR clusters`)) %>%
+  mutate(THR.clusters_model_I6_Merged = coalesce(THR_clusters_model_I6,`THR clusters`)) %>%
+  mutate(THR.clusters_model_THR56_I6_Merged = coalesce(THR_clusters_model_THR56_I6,`THR clusters`)) %>%
+  mutate(THR.clusters_model_THR56_I20_Merged = coalesce(THR_clusters_model_THR56_I20,`THR clusters`)) %>%
   mutate(THR.clusters_CTLA4Merged = coalesce(THR_clusters_CTLA4,`THR clusters`)) %>%
   mutate(THR.clusters_CTLA4_ICOS_CXCL13Merged = coalesce(THR_clusters_CTLA4_ICOS_CXCL13,`THR clusters`)) %>%
   mutate(THR.clusters_KLF7Merged = coalesce(THR_clusters_KLF7,`THR clusters`)) %>%
@@ -590,6 +818,9 @@ survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Sur
                                          "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
                                          "X3.Gene.classifier.subtype", 
                                          "THR.clusters_model20Merged", 
+                                         "THR.clusters_model_I6_Merged",
+                                         "THR.clusters_model_THR56_I6_Merged",
+                                         "THR.clusters_model_THR56_I20_Merged",
                                          'THR.clusters_CTLA4Merged',
                                          'THR.clusters_CTLA4_ICOS_CXCL13Merged',
                                          'THR.clusters_KLF7Merged',
@@ -597,12 +828,18 @@ survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Sur
                                          )] 
 
 survival_metabric$THR.clusters_model20Merged <- as.factor(survival_metabric$THR.clusters_model20Merged)
+survival_metabric$THR.clusters_model_I6_Merged <- as.factor(survival_metabric$THR.clusters_model_I6_Merged)
+survival_metabric$THR.clusters_model_THR56_I6_Merged <- as.factor(survival_metabric$THR.clusters_model_THR56_I6_Merged)
+survival_metabric$THR.clusters_model_THR56_I20_Merged <- as.factor(survival_metabric$THR.clusters_model_THR56_I20_Merged)
 survival_metabric$THR.clusters_CTLA4Merged <- as.factor(survival_metabric$THR.clusters_CTLA4Merged)
 survival_metabric$THR.clusters_CTLA4_ICOS_CXCL13Merged <- as.factor(survival_metabric$THR.clusters_CTLA4_ICOS_CXCL13Merged)
 survival_metabric$THR.clusters_KLF7Merged <- as.factor(survival_metabric$THR.clusters_KLF7Merged)
 survival_metabric$THR.clusters_ZNF627Merged <- as.factor(survival_metabric$THR.clusters_ZNF627Merged)
 
 levels(survival_metabric$THR.clusters_model20Merged) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
+levels(survival_metabric$THR.clusters_model_I6_Merged) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
+levels(survival_metabric$THR.clusters_model_THR56_I6_Merged) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
+levels(survival_metabric$THR.clusters_model_THR56_I20_Merged) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
 levels(survival_metabric$THR.clusters_CTLA4Merged) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
 levels(survival_metabric$THR.clusters_CTLA4_ICOS_CXCL13Merged) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
 levels(survival_metabric$THR.clusters_KLF7Merged) <- c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2')
@@ -610,6 +847,7 @@ levels(survival_metabric$THR.clusters_ZNF627Merged) <- c('T1_a', 'T1_b', 'E3', '
 
 
 cluster_colors <- as.vector(ann_colors$THR.clusters_model20Merged) # same order for the others
+cluster_colors <- as.vector(ann_colors$THR.clusters_model_I6_Merged) # same order for the others
 
 
 
@@ -652,6 +890,129 @@ ggsurvplot(Fit_metabric_RFS_model20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'THR50 clusters and RFS: THR50 + I20')
+dev.off()
+
+################################################################
+## Survival curves: model I6 common
+################################################################
+
+# OS
+Fit_metabric_os_model_I6 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_model_I6_Merged, data = survival_metabric)
+
+# RFS
+Fit_metabric_RFS_model_I6 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_model_I6_Merged, data = survival_metabric)
+
+pdf("./figures/c3_DE_THR50_RFS/metabric_os_5clusters_model_I6_Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_os_model_I6,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = c('T1_a', 'Ta_b', 'E3', 'E1', 'E4', 'E2'),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 clusters and OS: THR50 + I6')
+dev.off()
+
+## RFS: 
+pdf("./figures/c3_DE_THR50_RFS/metabric_rfs_5clusters_model_I6_Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_RFS_model_I6,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2'),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 clusters and RFS: THR50 + I6')
+dev.off()
+
+################################################################
+## Survival curves: model THR56_I6 
+################################################################
+
+# OS
+Fit_metabric_os_model_THR56_I6 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_model_THR56_I6_Merged, data = survival_metabric)
+
+# RFS
+Fit_metabric_RFS_model_THR56_I6 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_model_THR56_I6_Merged, data = survival_metabric)
+
+pdf("./figures/c3_DE_THR50_RFS/metabric_os_5clusters_model_THR56_I6_Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_os_model_THR56_I6,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = c('T1_a', 'Ta_b', 'E3', 'E1', 'E4', 'E2'),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 clusters and OS: THR56 + I6')
+dev.off()
+
+## RFS: 
+pdf("./figures/c3_DE_THR50_RFS/metabric_rfs_5clusters_model_THR56_I6_Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_RFS_model_THR56_I6,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2'),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 clusters and RFS: THR56 + I6')
+dev.off()
+
+################################################################
+## Survival curves: model THR56_I20 
+################################################################
+
+# OS
+Fit_metabric_os_model_THR56_I20 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_model_THR56_I20_Merged, data = survival_metabric)
+
+# RFS
+Fit_metabric_RFS_model_THR56_I20 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_model_THR56_I20_Merged, data = survival_metabric)
+
+pdf("./figures/c3_DE_THR50_RFS/metabric_os_5clusters_model_THR56_I20_Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_os_model_THR56_I20,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = c('T1_a', 'Ta_b', 'E3', 'E1', 'E4', 'E2'),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 clusters and OS: THR56 + I20')
+dev.off()
+
+## RFS: 
+pdf("./figures/c3_DE_THR50_RFS/metabric_rfs_5clusters_model_THR56_I20_Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_RFS_model_THR56_I20,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2'),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR50 clusters and RFS: THR56 + I20')
 dev.off()
 
 ################################################################

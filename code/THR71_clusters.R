@@ -1,4 +1,3 @@
-
 ############################################################################
 
 
@@ -42,10 +41,17 @@ rownames(Expr_metabric_refAll)[grep('^ZNF652', rownames(Expr_metabric_refAll))]
 # filter the THR signatures to include only the genes present in the expr matrices
 THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_metabric_refAll)]
 
+THR_71 <- c(THR_50_fil, 'B3GNT5', 'LOXL2', 'BMP1', 'SIDT1', 'DTX2', 'PAIP2', 'GFOD1', 'PABPC1L2B', 'TP53TG1', 'GPD1L', 'SAMD9', 'TNFAIP8', 'LMNB2', 'ZNF764', 'ICA1', 'KLHL25', 'OAZ3', 'LINC00674', 'PML', 'REEP5', 'ISCU')
+
+summary(THR_71 %in% rownames(Expr_metabric_refAll))
+THR_71[!(THR_71 %in% rownames(Expr_metabric_refAll))]
+
+THR_71_fil <- THR_71[THR_71 %in% rownames(Expr_metabric_refAll)]
+
 #############################################################################################
 #############################################################################################
 ## heatmap (THR 50)
-Expr_metabric_refAll_heatmap <- Expr_metabric_refAll[THR_50_fil, ] 
+Expr_metabric_refAll_heatmap <- Expr_metabric_refAll[THR_71_fil, ] 
 
 # Create annotation for columns/samples based on some clinical variables:
 Pheno_metabric_forHeatmap <- Pheno_metabric
@@ -94,7 +100,7 @@ ColPal <- colorRampPalette(colors = rev(brewer.pal(11,"RdYlBu")))(20)
 ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
 # heatmap with clinical annotation
-tiff('./figures/logreg/THR50_clusters/THR50_heatmap_metabric.tiff', width=3000, height=2000, res = 300)
+tiff('./figures/logreg/THR71_clusters/THR71_heatmap_metabric.tiff', width=3000, height=2000, res = 300)
 pheatmap(Expr_metabric_refAll_heatmap,
          scale = "none",
          #color = rev(heat.colors(20)),
@@ -151,7 +157,7 @@ heat_metabric <- pheatmap(Expr_metabric_refAll_heatmap,
 
 clusters_metabric <- as.data.frame(cbind(t(Expr_metabric_refAll_heatmap), 
                                          'THR clusters' = cutree(heat_metabric$tree_col, 
-                                                          k = 5)))
+                                                                 k = 5)))
 
 table(clusters_metabric$`THR clusters`)
 
@@ -169,12 +175,13 @@ table(AnnAll_metabric$`THR clusters`)
 #Expr_metabric_refAll_heatmap <- Expr_metabric_refAll_heatmap[, rownames(AnnAll_metabric)]
 
 
-ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
-levels(AnnAll_metabric$`THR clusters`) <- c('E3', 'E1', 'T1', 'E4', 'E2')
+#ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
+ann_colors$`THR clusters` <- c("#66A61E", "#1B9E77" ,"#7570B3", "#D95F02", "#E7298A") 
+levels(AnnAll_metabric$`THR clusters`) <- c('E1', 'E2', 'T1', 'E3', 'E4')
 names(ann_colors$`THR clusters`) <- levels(AnnAll_metabric$`THR clusters`)
 
 # heatmap with clinical annotation
-tiff('./figures/logreg/THR50_clusters/THR50_heatmap_metabric_clusters.tiff', width=3000, height=2000, res = 300)
+tiff('./figures/logreg/THR71_clusters/THR71_heatmap_metabric_clusters.tiff', width=3000, height=2000, res = 300)
 pheatmap(Expr_metabric_refAll_heatmap, 
          scale = "none",
          #color = rev(heat.colors(20)),
@@ -210,7 +217,7 @@ survival_metabric <- Pheno_metabric[, c("Overall.Survival.Status", "Overall.Surv
                                         "X3.Gene.classifier.subtype", "THR clusters")] 
 
 survival_metabric$`THR clusters` <- as.factor(survival_metabric$`THR clusters`)
-levels(survival_metabric$`THR clusters`) <- c('E3', 'E1', 'T1', 'E4', 'E2')
+levels(survival_metabric$`THR clusters`) <- c('E1', 'E2', 'T1', 'E3', 'E4')
 
 # OS
 Fit_metabric_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ as.factor(`THR clusters`), data = survival_metabric)
@@ -223,40 +230,44 @@ Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Stat
 # plot OS
 cluster_colors <- as.vector(ann_colors$`THR clusters`)
 
-pdf("./figures/logreg/THR50_clusters/metabric_os_5clusters_10years.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/THR71_clusters/metabric_os_5clusters.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
-           xlim = c(0,120),
+           xlim = c(0,240),
            #ylim = c(0.5, 1.00),
-           legend.labs = c('E3', 'E1', 'T1', 'E4', 'E2'),
-           legend.title	= 'THR clusters',
+           legend.labs = levels(survival_metabric$`THR clusters`),
+           legend.title	= 'THR-71 clusters',
            pval.size = 12,
-           break.x.by = 20,
+           break.x.by = 40,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR50 clusters and OS')
+           risk.table.y.text = FALSE, 
+           #title = 'THR50 clusters and OS'
+)
 dev.off()
 
 
 # plot RFS
-pdf("./figures/logreg/THR50_clusters/metabric_rfs_5clusters_10years.pdf", width = 10, height = 8, onefile = F)
+pdf("./figures/logreg/THR71_clusters/metabric_rfs_5clusters.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
-           xlim = c(0,120),
-           legend.labs = c('E3', 'E1', 'T1', 'E4', 'E2'),
-           legend.title	= 'THR clusters',
+           xlim = c(0,240),
+           legend.labs = levels(survival_metabric$`THR clusters`),
+           legend.title	= 'THR-71 clusters',
            pval.size = 12,
-           break.x.by = 20,
+           break.x.by = 40,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR50 clusters and RFS')
+           risk.table.y.text = FALSE, 
+           #title = 'THR50 clusters and RFS'
+)
 dev.off()
 
-#############
+#########################################################################################
 # the same for PAM50 subtypes
 # OS
 Fit_metabric_PAM50_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Pam50...Claudin.low.subtype, data = survival_metabric)

@@ -38,24 +38,24 @@ THR50 <- gsub('-', '', THR50)
 load('./objs/forKTSP.rda')
 
 ### combine in 1 dataset: Training
-Data_metabric <- as.data.frame(cbind(t(Expr_metabric), group_metabric))
+Data_metabric <- as.data.frame(cbind(t(Expr_metabric_refAll), group_metabric))
 Data_metabric$group_metabric <- as.factor(Data_metabric$group_metabric)
 levels(Data_metabric$group_metabric) <- c('0', '1')
 colnames(Data_metabric)[colnames(Data_metabric) %in% c('group_metabric')] <- c('os')
 
 ####
 # metabric summary
-sumtable(Pheno_metabric,
-         file='metabric_summary',
-         out = 'browser',
-         title='METABRIC Summary Statistics',
-         simple.kable=FALSE,
-         opts=list())
+#sumtable(Pheno_metabric,
+#         file='metabric_summary',
+#         out = 'browser',
+#         title='METABRIC Summary Statistics',
+#         simple.kable=FALSE,
+#         opts=list())
 
 
 ####################
 ### tcga
-Data_tcga <- as.data.frame(cbind(t(Expr_tcga), group_tcga))
+Data_tcga <- as.data.frame(cbind(t(Expr_tcga_refAll), group_tcga))
 Data_tcga$group_tcga <- as.factor(Data_tcga$group_tcga)
 levels(Data_tcga$group_tcga) <- c('0', '1')
 colnames(Data_tcga)[colnames(Data_tcga) %in% c('group_tcga')] <- c('os')
@@ -64,15 +64,15 @@ colnames(Data_tcga)[colnames(Data_tcga) %in% c('group_tcga')] <- c('os')
 ### TRAINING using logistic regression
 ###########################################################################
 
-rownames(Expr_metabric)[grep('^ZNF652', rownames(Expr_metabric))]
-rownames(Expr_tcga)[grep('^ZNF652', rownames(Expr_tcga))]
+rownames(Expr_metabric_refAll)[grep('^ZNF652', rownames(Expr_metabric_refAll))]
+rownames(Expr_tcga_refAll)[grep('^ZNF652', rownames(Expr_tcga_refAll))]
 
 
 # filter the THR signatures to include only the genes present in the expr matrices
-THR50_fil <- THR50[THR50 %in% rownames(Expr_metabric) & THR50 %in% rownames(Expr_tcga)]
+THR50_fil <- THR50[THR50 %in% rownames(Expr_metabric_refAll) & THR50 %in% rownames(Expr_tcga_refAll)]
 
 
-THR50_fil_tcga <- THR50[THR50 %in% rownames(Expr_metabric)]
+THR50_fil_tcga <- THR50[THR50 %in% rownames(Expr_metabric_refAll)]
 
 setdiff(THR50, THR50_fil)
 
@@ -149,8 +149,8 @@ Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overa
 Phenotype_tcga <- cbind(Pheno_tcga[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Progression.Free.Status", "Progress.Free.Survival..Months.")], 
                               tcga_prob_THR50, tcga_predClasses_THR50)
 
-#Expr_metabric <- Expr_metabric[ClassifierGenes, ]
-#Expr_tcga <- Expr_tcga[ClassifierGenes, ]
+#Expr_metabric_refAll <- Expr_metabric_refAll[ClassifierGenes, ]
+#Expr_tcga_refAll <- Expr_tcga_refAll[ClassifierGenes, ]
 
 
 # create a merged pdata and Z-scores object
@@ -788,7 +788,7 @@ dev.off()
 
 
 pdf("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/2_groups/THR50_1_metabric_rfs_X3.pdf", width = 8, height = 8, onefile = F)
-ggsurvplot(Fit_sig_metabric_rfs_THR50_1_X3,
+ggsurvplot(Fit_sig_metabric_rfs_THR50_X3,
            risk.table = FALSE,
            pval = TRUE,
            short.panel.labs = T,
@@ -876,7 +876,7 @@ dev.off()
 # RFS: quartiles: all
 
 tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/all_quartiles/THR50_1_metabric_rfs_X3_quartiles.tiff", width = 3000, height = 2200, res = 300)
-ggsurvplot(Fit_sig_metabric_rfs_THR50_1_quartiles_X3,
+ggsurvplot(Fit_sig_metabric_rfs_THR50_quartiles_X3,
            risk.table = FALSE,
            pval = TRUE,
            short.panel.labs = T,
@@ -893,6 +893,42 @@ ggsurvplot(Fit_sig_metabric_rfs_THR50_1_quartiles_X3,
            )
 dev.off()
 
+###############################################################
+# RFS: HER2 Q4 vs Q1,2,3 
+###############################################################
+# get the HER2+ samples
+table(CoxData_metabric$X3.Gene.classifier.subtype)
+CoxData_metabric_HER2 <- CoxData_metabric[CoxData_metabric$X3.Gene.classifier.subtype == 'HER2+', ]
+
+# group Q1,2,3 together
+table(CoxData_metabric_HER2$metabric_prob_THR50_quartiles) 
+CoxData_metabric_HER2$metabric_prob_THR50_quartiles <- as.factor(CoxData_metabric_HER2$metabric_prob_THR50_quartiles)
+levels(CoxData_metabric_HER2$metabric_prob_THR50_quartiles) <- c('Q1', 'Q2:Q4', 'Q2:Q4', 'Q2:Q4')
+
+Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quartiles, data = CoxData_metabric_HER2)
+
+# COXPH
+CoxData_metabric_HER2_2 <- CoxData_metabric_HER2
+CoxData_metabric_HER2_2$metabric_prob_THR50_quartiles <- factor(CoxData_metabric_HER2_2$metabric_prob_THR50_quartiles, levels = c('Q2:Q4', 'Q1'))
+Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quartiles, data = CoxData_metabric_HER2_2)
+summary(Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest_coxph)
+
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/all_quartiles/metabric_rfs_THR50_HER2_Q1vsRest.tiff", width = 3000, height = 2200, res = 300)
+ggsurvplot(Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest,
+           risk.table = FALSE,
+           pval = FALSE,
+           short.panel.labs = T,
+           legend.title	= '75% cutoff',
+           pval.size = 15,
+           #break.x.by = 20,
+           palette = 'jco',
+           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           legend.labs = c('Q1', 'Q2:Q4'),
+           risk.table.y.text = FALSE, 
+           #title = 'THR 50_1 and METABRIC RFS by X3 classifier subtypes: quartiles'
+)
+dev.off()
 ####################################################
 ## RFS: quintiles: all
 tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR50_quintiles/THR50_metabric_rfs_X3_quintiles.tiff", width = 3200, height = 3000, res = 300)
