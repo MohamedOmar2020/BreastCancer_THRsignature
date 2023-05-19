@@ -1,4 +1,3 @@
-############################################################################
 
 
 # Clean the working directory
@@ -22,6 +21,7 @@ library(survminer)
 library(survival)
 library(tidyverse)
 library(pheatmap)
+library(glmnet)
 
 #################
 THR_signature <- readxl::read_xlsx("./data/THR Signatures_sep23.xlsx")
@@ -41,9 +41,7 @@ rownames(Expr_metabric_refAll)[grep('^ZNF652', rownames(Expr_metabric_refAll))]
 # filter the THR signatures to include only the genes present in the expr matrices
 THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_metabric_refAll)]
 
-THR_56 <- c(THR_50_fil, 'CDC20', 'LMNB2', 'KIF2C', 'FAM64A', 'KIF4A', 'TPX2')
-
-save(THR_56, file = './objs/THR56.rda')
+THR_56 <- c(THR_50_fil, 'LMNB2', 'CDC20', 'KIF2C', 'FAM64A', 'KIF4A', 'TPX2')
 
 #############################################################################################
 #############################################################################################
@@ -96,33 +94,6 @@ breaksList = seq(-4, 4, by = 1)
 ColPal <- colorRampPalette(colors = rev(brewer.pal(11,"RdYlBu")))(20)
 ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
-# heatmap with clinical annotation
-tiff('./figures/logreg/THR56_clusters/THR56_heatmap_metabric.tiff', width=3000, height=2000, res = 300)
-pheatmap(Expr_metabric_refAll_heatmap,
-         scale = "none",
-         #color = rev(heat.colors(20)),
-         color =ColPal,
-         annotation_colors = ann_colors,
-         cluster_cols = T,
-         cluster_rows = T,
-         clustering_distance_cols = 'correlation',
-         clustering_distance_rows = 'correlation',
-         clustering_method = 'ward.D',
-         show_colnames = F,
-         show_rownames = T,
-         annotation_col = AnnAll_metabric,
-         annotation_names_col = T,
-         #annotation_row = AnnAll_metabric,
-         annotation_names_row = T,
-         fontsize = 7,
-         #fontsize_col = 3,
-         fontsize_row = 8,
-         cex = 1,
-         cutree_cols = 5,
-         cutree_rows = 5,
-         breaks = seq(-1, 1, by = 0.1),
-         main = "")
-dev.off()
 
 #######################################################
 # get the 5 groups
@@ -172,138 +143,142 @@ table(AnnAll_metabric$`THR clusters`)
 #Expr_metabric_refAll_heatmap <- Expr_metabric_refAll_heatmap[, rownames(AnnAll_metabric)]
 
 
-#ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(4)
-ann_colors$`THR clusters` <- c('#66A61E', "#7570B3", "#1B9E77" , '#D95F02', "#E7298A") 
-levels(AnnAll_metabric$`THR clusters`) <- c('E1', 'T1', 'E3', 'E4', 'E2')
+ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
+ann_colors$`THR clusters` <- c("#66A61E", "#7570B3", "#1B9E77" , "#D95F02", "#E7298A") 
+levels(AnnAll_metabric$`THR clusters`) <- c('E1', 'T1', 'E3', 'E2', 'E2')
 names(ann_colors$`THR clusters`) <- levels(AnnAll_metabric$`THR clusters`)
 
-# CDC20 is duplicated, remove one
-Expr_metabric_refAll_heatmap2 <- Expr_metabric_refAll_heatmap[!duplicated(rownames(Expr_metabric_refAll_heatmap)), ]
+# fix the cluster names in the pheno table
+table(Pheno_metabric$`THR clusters`)
+Pheno_metabric$`THR clusters` <- as.factor(Pheno_metabric$`THR clusters`)
+levels(Pheno_metabric$`THR clusters`) <- c('E1', 'T1', 'E3', 'E2', 'E2')
+table(Pheno_metabric$`THR clusters`)
 
-# heatmap with clinical annotation
-tiff('./figures/logreg/THR56_clusters/THR56_heatmap_metabric_clusters.tiff', width=3000, height=2000, res = 300)
-pheatmap(Expr_metabric_refAll_heatmap2, 
-         scale = "none",
-         #color = rev(heat.colors(20)),
-         color =ColPal,
-         annotation_colors = ann_colors,
-         cluster_cols = heat_metabric$tree_col, 
-         cluster_rows = T, 
-         clustering_distance_cols = 'correlation',
-         clustering_distance_rows = 'correlation',
-         clustering_method = 'ward.D',
-         show_colnames = F,
-         show_rownames = T,
-         annotation_col = AnnAll_metabric,
-         annotation_names_col = T,
-         #annotation_row = AnnAll_metabric,
-         annotation_names_row = T,
-         fontsize = 7,
-         #fontsize_col = 3,
-         fontsize_row = 8,
-         cex = 1,
-         cutree_cols = 5,
-         cutree_rows = 5,
-         breaks = seq(-1, 1, by = 0.1),
-         main = "")
-dev.off()
 
-# merge E2 and E4
-# Updating the 'THR clusters' column
-clusters_metabric$`THR clusters` <- as.character(clusters_metabric$`THR clusters`)
-clusters_metabric$`THR clusters`[clusters_metabric$`THR clusters` == "E4"] <- "E2"
+#############################################################################################################
+# get cluster 3 with crossing curves
+T1_pheno <- Pheno_metabric[Pheno_metabric$`THR clusters` == 'T1', ]
+T1_expr <- Expr_metabric_refAll[, rownames(T1_pheno)]
 
-AnnAll_metabric$`THR clusters` <- as.character(AnnAll_metabric$`THR clusters`)
-AnnAll_metabric$`THR clusters`[AnnAll_metabric$`THR clusters` == "E4"] <- "E2"
+all(rownames(T1_pheno) == colnames(T1_expr))
 
-# Updating the color scheme
-ann_colors$`THR clusters` <- c('#66A61E', "#7570B3", "#1B9E77" , '#E7298A')
-names(ann_colors$`THR clusters`) <- c('E1', 'T1', 'E3', 'E2')
+T1_pheno$T1_rfs_binary <- ifelse(T1_pheno$Relapse.Free.Status..Months. >= 50, 'longSurv', 'shortSurv')
 
-# heatmap with clinical annotation
-tiff('./figures/logreg/THR56_clusters/THR56_heatmap_metabric_clusters2.tiff', width=3000, height=2000, res = 300)
-pheatmap(Expr_metabric_refAll_heatmap2, 
-         scale = "none",
-         #color = rev(heat.colors(20)),
-         color =ColPal,
-         annotation_colors = ann_colors,
-         cluster_cols = heat_metabric$tree_col, 
-         cluster_rows = T, 
-         clustering_distance_cols = 'correlation',
-         clustering_distance_rows = 'correlation',
-         clustering_method = 'ward.D',
-         show_colnames = F,
-         show_rownames = T,
-         annotation_col = AnnAll_metabric,
-         annotation_names_col = T,
-         #annotation_row = AnnAll_metabric,
-         annotation_names_row = T,
-         fontsize = 7,
-         #fontsize_col = 3,
-         fontsize_row = 8,
-         cex = 1,
-         cutree_cols = 4,
-         cutree_rows = 4,
-         breaks = seq(-1, 1, by = 0.1),
-         main = "")
-dev.off()
+RFS_T1 <- as.factor(T1_pheno$T1_rfs_binary)
 
-##############################################################################################################
+######################################
+# load the THR50-derived i20 genes
+THR50_i20 <- readxl::read_xlsx("./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE.xlsx")$gene
+
+# Subset expression data to include only THR50_i20 genes
+T1_expr_i20 <- as.data.frame(t(T1_expr[THR50_i20, ]))
+
+# Load necessary library
+library(e1071)
+
+# Create a data frame with gene expressions and survival status
+T1_data <- data.frame(T1_expr_i20, RFS_T1)
+
+# Convert the survival status to a factor
+T1_data$RFS_T1 <- as.factor(T1_data$RFS_T1)
+
+table(T1_data$RFS_T1)
+
+# Fit SVM model to data using only the THR50_i20 genes
+svm_model <- svm(RFS_T1 ~ ., data = T1_data[, c(THR50_i20, "RFS_T1")])
+
+# Predict survival status using the SVM model
+predictions <- predict(svm_model, T1_data[, THR50_i20])
+
+# Convert predictions to "T1a" and "T1b" 
+T1_data$group2 <- ifelse(predictions == "longSurv", "T1a", "T1b")
+table(T1_data$group2)
+
+# Now you can apply survival analysis on the new groups
+# Recalculate survival curves for the two groups
+surv_data <- data.frame(time = T1_pheno$`Relapse.Free.Status..Months.`, 
+                        status = T1_pheno$`Relapse.Free.Status`,
+                        group = T1_data$group2)
+
+km_fit <- survfit(Surv(time, status) ~ group, data = surv_data)
+
+table(surv_data$group)
+
+# Plot the survival curves
+ggsurvplot(km_fit)
+
+###########################################################################
+T1 <- data.frame(THR_clusters_i20model = T1_pheno$group,
+                 `Sample.ID` = rownames(T1_pheno))
+
+rownames(T1) <- rownames(T1_pheno)
+
+
+# merge
+Pheno_metabric$`THR clusters`[Pheno_metabric$`THR clusters` == 'T1'] <- NA
+
+
+Pheno_metabric2 <- merge(x = T1, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
+
+Pheno_metabric2 <- Pheno_metabric2 %>% 
+  mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i20model = as.factor(THR_clusters_i20model)) %>%
+  mutate(THR.clusters_i20model_Merged = coalesce(THR_clusters_i20model,`THR clusters`))
+
+###########################################################################################
+##########################################################################################
+## survival analysis
+
 ## Keep only the relevant information (Metastasis Event and Time)
-survival_metabric <- Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.", 
-                                        "Relapse.Free.Status", "Relapse.Free.Status..Months.", 
-                                        "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
-                                        "X3.Gene.classifier.subtype", "THR clusters")] 
+survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Survival..Months.", 
+                                         "Relapse.Free.Status", "Relapse.Free.Status..Months.", 
+                                         "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
+                                         "X3.Gene.classifier.subtype", 
+                                         "THR.clusters_i20model_Merged"
+)] 
 
-survival_metabric$`THR clusters` <- as.factor(survival_metabric$`THR clusters`)
-levels(survival_metabric$`THR clusters`) <- c('E1', 'T1', 'E3', 'E2', 'E2')
-table(survival_metabric$`THR clusters`)
-table(AnnAll_metabric$`THR clusters`)
+survival_metabric$THR.clusters_i20model_Merged <- as.factor(survival_metabric$THR.clusters_i20model_Merged)
+survival_metabric$THR.clusters_i20model_Merged <- droplevels(survival_metabric$THR.clusters_i20model_Merged)
+
+
+cluster_colors <- as.vector(ann_colors$THR.clusters_i20model_Merged) # same order for the others
+
+################################################################
+## Survival curves: model 20
+################################################################
 
 # OS
-Fit_metabric_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ as.factor(`THR clusters`), data = survival_metabric)
+Fit_metabric_os_i20model <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_i20model_Merged, data = survival_metabric)
 
 # RFS
-Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ as.factor(`THR clusters`), data = survival_metabric)
+Fit_metabric_RFS_i20model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_i20model_Merged, data = survival_metabric)
 
-############################################################################
-############################################################################
-# plot OS
-cluster_colors <- as.vector(ann_colors$`THR clusters`)
-
-pdf("./figures/logreg/THR56_clusters/metabric_os_5clusters.pdf", width = 10, height = 8, onefile = F)
-ggsurvplot(Fit_metabric_os,
+pdf("./figures/logreg/THR56_clusters/metabric_os_5clusters_model20Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_os_i20model,
            risk.table = FALSE,
            pval = TRUE,
-           palette = cluster_colors,
-           xlim = c(0,240),
-           #ylim = c(0.5, 1.00),
-           legend.labs = levels(survival_metabric$`THR clusters`),
-           legend.title	= 'THR-56 clusters',
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_i20model_Merged),
+           legend.title	= 'THR clusters',
            pval.size = 12,
-           break.x.by = 40,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, 
-           #title = 'THR50 clusters and OS'
-           )
+           risk.table.y.text = FALSE, title = 'THR56 clusters and OS: THR56 + THR50-derived i20')
 dev.off()
 
-
-# plot RFS
-pdf("./figures/logreg/THR56_clusters/metabric_rfs_5clusters.pdf", width = 10, height = 8, onefile = F)
-ggsurvplot(Fit_metabric_RFS,
+## RFS: 
+pdf("./figures/logreg/THR56_clusters/metabric_rfs_5clusters_model20Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_RFS_i20model,
            risk.table = FALSE,
            pval = TRUE,
-           palette = cluster_colors,
-           xlim = c(0,240),
-           legend.labs = levels(survival_metabric$`THR clusters`),
-           legend.title	= 'THR-56 clusters',
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_i20model_Merged),
+           legend.title	= 'THR clusters',
            pval.size = 12,
-           break.x.by = 40,
+           #break.x.by = 20,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, 
-           #title = 'THR50 clusters and RFS'
-           )
+           risk.table.y.text = FALSE, title = 'THR56 clusters and RFS: THR56 + THR50-derived i20')
 dev.off()

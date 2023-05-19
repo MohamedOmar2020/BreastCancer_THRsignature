@@ -239,6 +239,21 @@ summary(THR70_I20_c3_model)
 save(THR70_I20_c3_model, file = './objs/THR70_I20_model.rda')
 
 ####################################
+# THR70 I20: Recursive Feature Elimination 
+#####################################
+library(caret)
+ctrl <- rfeControl(functions=rfFuncs, method="cv", number=10)
+results <- rfe(Data_c3[,THR50_c3_top20$gene], Data_c3$RFS_c3, sizes=c(1:4), rfeControl=ctrl)
+print(results)
+
+# Get the optimal number of variables
+# Select the top 5 variables based on the ranking
+top_vars <- c('KIR3DL3', 'TIMP1', 'CD511953', 'NCBP2', 'SPRED2', 'STX1A', 'HIST1H2BF', 'USP30')
+# Build the model with the optimal variables only
+THR70_I20_c3_model_rfe <- glm(as.formula(paste("RFS_c3 ~", paste(top_vars, collapse = "+"))), data = Data_c3, family = "binomial")
+summary(THR70_I20_c3_model_rfe)
+
+####################################
 # THR50 I20 model
 #####################################
 THR50_I20_c3_model <- glm(as.formula((paste("RFS_c3 ~", paste(THR50_c3_top20$gene, collapse = "+")))), data = Data_c3, family = "binomial")
@@ -273,6 +288,7 @@ summary(ZNF627_model_c3)
 # Make predictions
 
 Train_prob_THR70_c3_THR70_I20 <- THR70_I20_c3_model %>% predict(Data_c3 , type = "response")
+Train_prob_THR70_c3_THR70_I20_rfe <- THR70_I20_c3_model_rfe %>% predict(Data_c3 , type = "response")
 Train_prob_THR70_c3_THR50_I20 <- THR50_I20_c3_model %>% predict(Data_c3 , type = "response")
 Train_prob_THR70_c3_CTLA4 <- CTLA4_model_c3 %>% predict(Data_c3 , type = "response")
 Train_prob_THR70_c3_CTLA4_ICOS_CXCL13 <- CTLA4_ICOS_CXCL13_model_c3 %>% predict(Data_c3 , type = "response")
@@ -281,6 +297,7 @@ Train_prob_THR70_c3_ZNF627 <- ZNF627_model_c3 %>% predict(Data_c3 , type = "resp
 
 ### Threshold
 thr_THR70_c3_THR70_I20 <- coords(roc(RFS_c3, Train_prob_THR70_c3_THR70_I20, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+thr_THR70_c3_THR70_I20_rfe <- coords(roc(RFS_c3, Train_prob_THR70_c3_THR70_I20_rfe, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR70_c3_THR50_I20 <- coords(roc(RFS_c3, Train_prob_THR70_c3_THR50_I20, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR70_c3_CTLA4 <- coords(roc(RFS_c3, Train_prob_THR70_c3_CTLA4, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR70_c3_CTLA4_ICOS_CXCL13 <- coords(roc(RFS_c3, Train_prob_THR70_c3_CTLA4_ICOS_CXCL13, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
@@ -291,6 +308,9 @@ thr_THR70_c3_ZNF627 <- coords(roc(RFS_c3, Train_prob_THR70_c3_ZNF627, levels = c
 ### ROC Curve
 ROCTrain_THR70_c3_THR70_I20 <- roc(RFS_c3, Train_prob_THR70_c3_THR70_I20, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
 ROCTrain_THR70_c3_THR70_I20
+
+ROCTrain_THR70_c3_THR70_I20_rfe <- roc(RFS_c3, Train_prob_THR70_c3_THR70_I20_rfe, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROCTrain_THR70_c3_THR70_I20_rfe
 
 ROCTrain_THR70_c3_THR50_I20 <- roc(RFS_c3, Train_prob_THR70_c3_THR50_I20, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
 ROCTrain_THR70_c3_THR50_I20
@@ -311,6 +331,10 @@ ROCTrain_THR70_c3_ZNF627
 predClasses_THR70_c3_THR70_I20 <- ifelse(Train_prob_THR70_c3_THR70_I20 >= thr_THR70_c3_THR70_I20$threshold, "longSurv", "shortSurv")
 table(predClasses_THR70_c3_THR70_I20)
 predClasses_THR70_c3_THR70_I20 <- factor(predClasses_THR70_c3_THR70_I20, levels = c('longSurv', 'shortSurv'))
+
+predClasses_THR70_c3_THR70_I20_rfe <- ifelse(Train_prob_THR70_c3_THR70_I20_rfe >= thr_THR70_c3_THR70_I20_rfe$threshold, "longSurv", "shortSurv")
+table(predClasses_THR70_c3_THR70_I20_rfe)
+predClasses_THR70_c3_THR70_I20_rfe <- factor(predClasses_THR70_c3_THR70_I20_rfe, levels = c('longSurv', 'shortSurv'))
 
 predClasses_THR70_c3_THR50_I20 <- ifelse(Train_prob_THR70_c3_THR50_I20 >= thr_THR70_c3_THR50_I20$threshold, "longSurv", "shortSurv")
 table(predClasses_THR70_c3_THR50_I20)
@@ -336,6 +360,7 @@ predClasses_THR70_c3_ZNF627 <- factor(predClasses_THR70_c3_ZNF627, levels = c('l
 ## Keep only the relevant information (Metastasis Event and Time)
 cluster3_pheno <- cbind(cluster3_pheno[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype", "HER2.Status")], 
                         Train_prob_THR70_c3_THR70_I20, predClasses_THR70_c3_THR70_I20,
+                        Train_prob_THR70_c3_THR70_I20_rfe, predClasses_THR70_c3_THR70_I20_rfe,
                         Train_prob_THR70_c3_THR50_I20, predClasses_THR70_c3_THR50_I20,
                         Train_prob_THR70_c3_CTLA4, predClasses_THR70_c3_CTLA4,
                         Train_prob_THR70_c3_CTLA4_ICOS_CXCL13, predClasses_THR70_c3_CTLA4_ICOS_CXCL13,
@@ -380,19 +405,19 @@ dev.off()
 
 #####################
 # plot RFS
-png("./figures/T1_DE_THR70_RFS/THR70_metabric_RFS_T1_THR70_I20_20yrs.png", width = 3000, height = 3000, res = 300)
+png("./figures/T1_DE_THR70_RFS/THR70_metabric_RFS_T1_THR70_I20_20yrs.png", width = 2200, height = 2200, res = 300)
 ggsurvplot(Fit_sig_metabric_RFS_THR70_T1_THR70_I20,
            risk.table = FALSE,
            pval = FALSE,
            pval.size  = 12,
            xlim = c(0, 240),
            break.x.by = 40,
-           legend.labs = c('PNBC-A', 'PNBC-B'),
-           legend.title = c('ER-negative clusters'),
+           legend.labs = c('PQNBC.i', 'PQNBC'),
+           #legend.title = c('ER-negative clusters'),
            ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
-           palette = c('#6057cc', '#8a899a'),
+           palette = 'jco',
            #title = 'RFS in METABRIC in T1 class derived from THR70: THR70 I20 model'
 )
 dev.off()
@@ -418,6 +443,57 @@ ggsurvplot(Fit_sig_metabric_RFS_THR70_T1_THR70_I20_byHer2,
 )
 dev.off()
 
+
+#########################################
+# THR70 I20 rfe
+#########################################
+
+# OS
+Fit_sig_metabric_os_THR70_T1_THR70_I0_rfe <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR70_c3_THR70_I20_rfe, data = CoxData_metabric_c3)
+
+##########
+# RFS
+Fit_sig_metabric_RFS_THR70_T1_THR70_I20_rfe <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR70_c3_THR70_I20_rfe, data = CoxData_metabric_c3)
+
+
+# RFS COXPH
+#CoxData_metabric_c3_forCox <- CoxData_metabric_c3[CoxData_metabric_c3$Train_prob_THR70_c3_THR70_I20]  
+Fit_sig_metabric_RFS_THR70_T1_THR70_I20_rfe_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR70_c3_THR70_I20_rfe, data = CoxData_metabric_c3)
+summary(Fit_sig_metabric_RFS_THR70_T1_THR70_I20_rfe_coxph)
+
+
+# plot OS
+tiff("./figures/T1_DE_THR70_RFS/THR70_metabric_os_T1_THR70_I20_rfe.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR70_T1_THR70_I0_rfe,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           title = 'OS in METABRIC in T1 class derived from THR70: THR70 I20 rfe model'
+)
+dev.off()
+
+#####################
+# plot RFS
+png("./figures/T1_DE_THR70_RFS/THR70_metabric_RFS_T1_THR70_I20_rfe_20yrs.png", width = 2200, height = 2200, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR70_T1_THR70_I20_rfe,
+           risk.table = FALSE,
+           pval = FALSE,
+           pval.size  = 12,
+           xlim = c(0, 240),
+           break.x.by = 40,
+           legend.labs = c('PQNBC.i', 'PQNBC'),
+           #legend.title = c('ER-negative clusters'),
+           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           #title = 'RFS in METABRIC in T1 class derived from THR70: THR70 I20 model'
+)
+dev.off()
 
 #########################################
 # THR50 I20
@@ -745,30 +821,32 @@ Fit_metabric_os_THR70_I20_2 <- survfit(Surv(Overall.Survival..Months., Overall.S
 Fit_metabric_RFS_THR70_I20 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_THR70_I20_Merged, data = survival_metabric)
 Fit_metabric_RFS_THR70_I20_2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_THR70_I20_Merged, data = survival_metabric2)
 
-pdf("./figures/T1_DE_THR70_RFS/metabric_os_5clusters_THR70_I20_merged_20yrs.pdf", width = 10, height = 8, onefile = F)
+png("./figures/T1_DE_THR70_RFS/metabric_os_5clusters_THR70_I20_merged_20yrs.png", width = 2500, height = 2500, res = 300)
 ggsurvplot(Fit_metabric_os_THR70_I20,
            risk.table = FALSE,
-           pval = TRUE,
+           pval = FALSE,
            palette = cluster_colors,
            xlim = c(0,240),
            legend.labs = levels(survival_metabric$THR.clusters_THR70_I20_Merged),
-           legend.title	= 'THR70 clusters',
+           legend.title	= 'THR-70 clusters',
            pval.size = 12,
            break.x.by = 40,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR70 clusters and OS: THR70 + I20')
+           risk.table.y.text = FALSE 
+           #title = 'THR70 clusters and OS: THR70 + I20'
+           )
 dev.off()
 
 ## RFS: 
-png("./figures/T1_DE_THR70_RFS/metabric_RFS_5clusters_THR70_I20_merged_20yrs.png", width = 2200, height = 2000, res = 300)
+png("./figures/T1_DE_THR70_RFS/metabric_RFS_5clusters_THR70_I20_merged_20yrs.png", width = 2500, height = 2500, res = 300)
 ggsurvplot(Fit_metabric_RFS_THR70_I20,
            risk.table = FALSE,
-           pval = TRUE,
+           pval = FALSE,
            palette = cluster_colors,
            xlim = c(0,240),
            legend.labs = gsub('_', '-', levels(survival_metabric$THR.clusters_THR70_I20_Merged)),
-           legend.title	= 'THR70 clusters',
+           legend.title	= 'THR-70 clusters',
            pval.size = 12,
            break.x.by = 40,
            ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
@@ -924,7 +1002,112 @@ ggsurvplot(Fit_sig_metabric_RFS_E1_byHER2,
 dev.off()
 
 ##########################################################################################
-# RFS E1 HER2+ versus E1 HER2- 
+# RFS E2 HER2+ versus E2 HER2- 
+##########################################################################################
+
+survival_metabric$THR.clusters_THR70_I20_Merged <- as.factor(survival_metabric$THR.clusters_THR70_I20_Merged)
+table(survival_metabric$THR.clusters_THR70_I20_Merged)
+survival_metabric_E2 <- survival_metabric[survival_metabric$THR.clusters_THR70_I20_Merged %in% c('E2a', 'E2b'), ]
+
+#survival_metabric_Her2Pos <- survival_metabric[survival_metabric$X3.Gene.classifier.subtype == 'HER2+', ]
+#survival_metabric_Her2Pos <- survival_metabric_Her2Pos[!is.na(survival_metabric_Her2Pos$X3.Gene.classifier.subtype), ]
+
+# change the levels of THR clusters to group all the E together
+survival_metabric_E2$THR.clusters_THR70_I20_Merged <- droplevels(survival_metabric_E2$THR.clusters_THR70_I20_Merged)
+
+# fit survival curves
+Fit_sig_metabric_RFS_E2_byHER2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_E2)
+
+# plot
+png("./figures/T1_DE_THR70_RFS/THR70_E2_byHER2.png", width = 2200, height = 2000, res = 250)
+ggsurvplot(Fit_sig_metabric_RFS_E2_byHER2,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette =  'jco',
+           xlim = c(0,240),
+           legend.labs = c('E2 HER2-', 'E2 HER2+'),
+           #legend.title	= 'THR-70 clusters',
+           pval.size = 11,
+           break.x.by = 40,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS: THR70 + I20'
+)
+dev.off()
+
+##########################################################################################
+# RFS E3 HER2+ versus E3 HER2- 
+##########################################################################################
+
+survival_metabric$THR.clusters_THR70_I20_Merged <- as.factor(survival_metabric$THR.clusters_THR70_I20_Merged)
+table(survival_metabric$THR.clusters_THR70_I20_Merged)
+survival_metabric_E3 <- survival_metabric[survival_metabric$THR.clusters_THR70_I20_Merged == 'E3', ]
+
+#survival_metabric_Her2Pos <- survival_metabric[survival_metabric$X3.Gene.classifier.subtype == 'HER2+', ]
+#survival_metabric_Her2Pos <- survival_metabric_Her2Pos[!is.na(survival_metabric_Her2Pos$X3.Gene.classifier.subtype), ]
+
+# change the levels of THR clusters to group all the E together
+survival_metabric_E3$THR.clusters_THR70_I20_Merged <- droplevels(survival_metabric_E3$THR.clusters_THR70_I20_Merged)
+
+# fit survival curves
+Fit_sig_metabric_RFS_E3_byHER2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_E3)
+
+# plot
+png("./figures/T1_DE_THR70_RFS/THR70_E3_byHER2.png", width = 2200, height = 2000, res = 250)
+ggsurvplot(Fit_sig_metabric_RFS_E3_byHER2,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette =  'jco',
+           xlim = c(0,240),
+           legend.labs = c('E3 HER2-', 'E3 HER2+'),
+           #legend.title	= 'THR-70 clusters',
+           pval.size = 11,
+           break.x.by = 40,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS: THR70 + I20'
+)
+dev.off()
+
+##########################################################################################
+# RFS all E HER2+ versus all E HER2- 
+##########################################################################################
+
+survival_metabric$THR.clusters_THR70_I20_Merged <- as.factor(survival_metabric$THR.clusters_THR70_I20_Merged)
+table(survival_metabric$THR.clusters_THR70_I20_Merged)
+survival_metabric_allE <- survival_metabric[survival_metabric$THR.clusters_THR70_I20_Merged %in% c('E1', 'E2a', 'E2b', 'E3'), ]
+
+#survival_metabric_Her2Pos <- survival_metabric[survival_metabric$X3.Gene.classifier.subtype == 'HER2+', ]
+#survival_metabric_Her2Pos <- survival_metabric_Her2Pos[!is.na(survival_metabric_Her2Pos$X3.Gene.classifier.subtype), ]
+
+# change the levels of THR clusters to group all the E together
+survival_metabric_allE$THR.clusters_THR70_I20_Merged <- droplevels(survival_metabric_allE$THR.clusters_THR70_I20_Merged)
+
+# fit survival curves
+Fit_sig_metabric_RFS_allE_byHER2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_allE)
+
+# plot
+png("./figures/T1_DE_THR70_RFS/THR70_allE_byHER2.png", width = 2200, height = 2000, res = 250)
+ggsurvplot(Fit_sig_metabric_RFS_allE_byHER2,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette =  'jco',
+           xlim = c(0,240),
+           legend.labs = c('all E HER2-', 'all E HER2+'),
+           #legend.title	= 'THR-70 clusters',
+           pval.size = 11,
+           break.x.by = 40,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS: THR70 + I20'
+)
+dev.off()
+
+##########################################################################################
+# RFS E1 vs PNBC in HER2+ groups 
 ##########################################################################################
 
 survival_metabric$THR.clusters_THR70_I20_Merged <- as.factor(survival_metabric$THR.clusters_THR70_I20_Merged)
@@ -1007,7 +1190,7 @@ dev.off()
 
 #####################
 # plot RFS
-tiff("./figures/T1_DE_THR70_RFS/THR70_metabric_RFS_T1_THR70_I20_20yrs_ERposClusters.tiff", width = 2200, height = 2000, res = 300)
+tiff("./figures/T1_DE_THR70_RFS/THR70_metabric_RFS_T1_THR70_I20_20yrs_ERposClusters.tiff", width = 2200, height = 2200, res = 300)
 ggsurvplot(Fit_sig_metabric_RFS_THR70_ERpos_THR70_I20,
            risk.table = FALSE,
            pval = FALSE,
@@ -1015,8 +1198,8 @@ ggsurvplot(Fit_sig_metabric_RFS_THR70_ERpos_THR70_I20,
            xlim = c(0, 240),
            break.x.by = 40,
            legend.labs = levels(survival_metabric_ERpos$THR.clusters_THR70_I20_Merged),
-           legend.title = c('ER-positive clusters'),
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           legend.title = c(''),
+           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            palette = c('#1B9E77', "#c1b026", "#D95F02"),
@@ -1064,7 +1247,7 @@ ggsurvplot(Fit_sig_metabric_os_THR70_X3tnbcHer2_THR70_I20,
            pval.size = 12,
            xlim = c(0,240),
            break.x.by = 40,
-           legend.labs = levels(survival_metabric_X3_TNBC_HER2$X3.Gene.classifier.subtype),
+           legend.labs = c('HER2+', 'TNBC'),
            ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            #palette = c('#1B9E77', "#c1b026", "#D95F02"),
@@ -1082,9 +1265,10 @@ ggsurvplot(Fit_sig_metabric_RFS_THR70_X3tnbcHer2_THR70_I20,
            pval.size  = 12,
            xlim = c(0, 240),
            break.x.by = 40,
-           legend.labs = levels(survival_metabric_X3_TNBC_HER2$X3.Gene.classifier.subtype),
+           legend.labs = c('HER2+', 'TNBC'),
            #legend.title = c('ER-positive clusters'),
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
+           palette = 'jco',
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #palette = c('#1B9E77', "#c1b026", "#D95F02"),
@@ -1148,12 +1332,12 @@ ggsurvplot(Fit_sig_metabric_RFS_THR70_X3_ERprolif_THR70_I20,
            pval.size  = 12,
            xlim = c(0, 240),
            break.x.by = 40,
-           legend.labs = levels(survival_metabric_X3_ERprolif$X3.Gene.classifier.subtype),
+           legend.labs = c('ER-LP', 'ER-HP'),
            #legend.title = c('ER-positive clusters'),
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
-           #palette = c('#1B9E77', "#c1b026", "#D95F02"),
+           palette = 'jco',
            #title = 'RFS in METABRIC in T1 class derived from THR70: THR70 I20 model'
             ) + guides(
                 colour = guide_legend(ncol =1))

@@ -37,15 +37,15 @@ THR_50 <- gsub('-', '', THR_50)
 load('./objs/forKTSP.rda')
 
 # fix gene names
-rownames(Expr_metabric)[grep('^ZNF652', rownames(Expr_metabric))]
+rownames(Expr_metabric_refAll)[grep('^ZNF652', rownames(Expr_metabric_refAll))]
 
 # filter the THR signatures to include only the genes present in the expr matrices
-THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_metabric)]
+THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_metabric_refAll)]
 
 #############################################################################################
 #############################################################################################
 ## heatmap (THR 50)
-Expr_metabric_heatmap <- Expr_metabric[THR_50_fil, ] 
+Expr_metabric_refAll_heatmap <- Expr_metabric_refAll[THR_50_fil, ] 
 
 # Create annotation for columns/samples based on some clinical variables:
 Pheno_metabric_forHeatmap <- Pheno_metabric
@@ -68,8 +68,8 @@ AnnAll_metabric <- Pheno_metabric_forHeatmap %>%
 
 
 # filter and transpose the expression matrix
-Expr_metabric_heatmap <- Expr_metabric_heatmap[, rownames(AnnAll_metabric)]
-Expr_metabric_heatmap_t <- t(Expr_metabric_heatmap)
+Expr_metabric_refAll_heatmap <- Expr_metabric_refAll_heatmap[, rownames(AnnAll_metabric)]
+Expr_metabric_refAll_heatmap_t <- t(Expr_metabric_refAll_heatmap)
 
 # filter pheno (above we remove normal and NC)
 Pheno_metabric <- Pheno_metabric[rownames(AnnAll_metabric), ]
@@ -96,7 +96,7 @@ ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
 #######################################################
 # get the 5 groups
-heat_metabric <- pheatmap(Expr_metabric_heatmap, 
+heat_metabric <- pheatmap(Expr_metabric_refAll_heatmap, 
                           scale = "none",
                           #color = rev(heat.colors(20)),
                           color =ColPal,
@@ -122,7 +122,7 @@ heat_metabric <- pheatmap(Expr_metabric_heatmap,
                           breaks = seq(-1, 1, by = 0.1),
                           main = "")
 
-clusters_metabric <- as.data.frame(cbind(t(Expr_metabric_heatmap), 
+clusters_metabric <- as.data.frame(cbind(t(Expr_metabric_refAll_heatmap), 
                                          'THR clusters' = cutree(heat_metabric$tree_col, 
                                                                  k = 5)))
 
@@ -139,7 +139,7 @@ table(AnnAll_metabric$`THR clusters`)
 
 # re-order the annotation dataframe then the expression matrix by cluster
 #AnnAll_metabric <- AnnAll_metabric[order(AnnAll_metabric$cluster, decreasing = FALSE), ]
-#Expr_metabric_heatmap <- Expr_metabric_heatmap[, rownames(AnnAll_metabric)]
+#Expr_metabric_refAll_heatmap <- Expr_metabric_refAll_heatmap[, rownames(AnnAll_metabric)]
 
 
 ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
@@ -150,7 +150,7 @@ names(ann_colors$`THR clusters`) <- levels(AnnAll_metabric$`THR clusters`)
 #############################################################################################################
 # get cluster 3 with crossing curves
 cluster3_pheno <- Pheno_metabric[Pheno_metabric$`THR clusters` == '3', ]
-cluster3_expr <- Expr_metabric[, rownames(cluster3_pheno)]
+cluster3_expr <- Expr_metabric_refAll[, rownames(cluster3_pheno)]
 
 all(rownames(cluster3_pheno) == colnames(cluster3_expr))
 
@@ -165,12 +165,6 @@ table(cluster3_pheno$c3_rfs_binary)
 
 ######################################
 # differential expression 
-
-
-
-
-
-
 
 
 ####
@@ -339,7 +333,7 @@ dev.off()
 ##############################################################
 ## heatmap
 
-Expr_metabric_heatmap <- Expr_metabric[THR_50_fil, ] 
+Expr_metabric_refAll_heatmap <- Expr_metabric_refAll[THR_50_fil, ] 
 
 # Create annotation for columns/samples based on some clinical variables:
 Pheno_metabric3 <- merge(x = c3, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
@@ -375,8 +369,8 @@ AnnAll_metabric$THR.clusters <- Pheno_metabric3$THR.clusters
 table(AnnAll_metabric$THR.clusters)
 
 # filter and transpose the expression matrix
-Expr_metabric_heatmap <- Expr_metabric_heatmap[, rownames(AnnAll_metabric)]
-Expr_metabric_heatmap_t <- t(Expr_metabric_heatmap)
+Expr_metabric_refAll_heatmap <- Expr_metabric_refAll_heatmap[, rownames(AnnAll_metabric)]
+Expr_metabric_refAll_heatmap_t <- t(Expr_metabric_refAll_heatmap)
 
 # filter pheno (above we remove normal and NC)
 Pheno_metabric <- Pheno_metabric[rownames(AnnAll_metabric), ]
@@ -406,7 +400,7 @@ ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
 # heatmap with clinical annotation
 tiff('./figures/c3/THR50_heatmap_metabric_clusters_newC3.tiff', width=3000, height=2000, res = 300)
-pheatmap(Expr_metabric_heatmap, 
+pheatmap(Expr_metabric_refAll_heatmap, 
          scale = "none",
          #color = rev(heat.colors(20)),
          color =ColPal,

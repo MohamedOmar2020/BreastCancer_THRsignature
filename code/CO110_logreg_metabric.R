@@ -24,6 +24,7 @@ library(survival)
 library(tidyverse)
 library(pheatmap)
 library(vtable)
+library(readxl)
 
 #############################
 ## load the ET signatures
@@ -608,10 +609,10 @@ dev.off()
 
 # OS
 
-pdf("./figures/CO110_metabric/logreg/byClinicalGroup/CO110_metabric_os_ER.pdf", width = 8, height = 8, onefile = F)
+tiff("./figures/CO110_metabric/logreg/byClinicalGroup/CO110_metabric_os_ER.tiff", width = 3000, height = 2000, res =300)
 ggsurvplot(Fit_sig_metabric_os_CO110_ER,
            risk.table = FALSE,
-           pval = TRUE,
+           pval = FALSE,
            short.panel.labs = T,
            facet.by = "ER.status.measured.by.IHC",
            palette = 'jco',
@@ -622,14 +623,21 @@ ggsurvplot(Fit_sig_metabric_os_CO110_ER,
            )
 dev.off()
 
+# Os COXPH by class
+lapply(split(CoxData_metabric, CoxData_metabric$ER.status.measured.by.IHC),
+       function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_CO110, data = x)))
+
+# by prob
+lapply(split(CoxData_metabric, CoxData_metabric$ER.status.measured.by.IHC),
+       function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_CO110, data = x)))
 
 ######################
 # RFS
 
-pdf("./figures/CO110_metabric/logreg/byClinicalGroup/CO110_metabric_RFS_ER.pdf", width = 8, height = 8, onefile = F)
+tiff("./figures/CO110_metabric/logreg/byClinicalGroup/CO110_metabric_RFS_ER.tiff", width = 3000, height = 2000, res =300)
 ggsurvplot(Fit_sig_metabric_rfs_CO110_ER,
            risk.table = FALSE,
-           pval = TRUE,
+           pval = FALSE,
            short.panel.labs = T,
            facet.by = "ER.status.measured.by.IHC",
            palette = 'jco',
@@ -641,6 +649,13 @@ ggsurvplot(Fit_sig_metabric_rfs_CO110_ER,
 dev.off()
 
 
+# RFS COXPH by class
+lapply(split(CoxData_metabric, CoxData_metabric$ER.status.measured.by.IHC),
+       function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_CO110, data = x)))
+
+# by prob
+lapply(split(CoxData_metabric, CoxData_metabric$ER.status.measured.by.IHC),
+       function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_CO110, data = x)))
 
 ####################################################
 # OS: quartiles: all

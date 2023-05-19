@@ -913,22 +913,24 @@ CoxData_metabric_HER2_2$metabric_prob_THR50_quartiles <- factor(CoxData_metabric
 Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quartiles, data = CoxData_metabric_HER2_2)
 summary(Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest_coxph)
 
-tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/all_quartiles/metabric_rfs_THR50_HER2_Q1vsRest.tiff", width = 3000, height = 2200, res = 300)
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/all_quartiles/metabric_rfs_THR50_HER2_Q1vsRest.tiff", width = 2200, height = 2200, res = 300)
 ggsurvplot(Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest,
            risk.table = FALSE,
            pval = FALSE,
            short.panel.labs = T,
            legend.title	= '75% cutoff',
            pval.size = 15,
-           #break.x.by = 20,
+           xlim = c(0,240),
+           break.x.by = 40,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            legend.labs = c('Q1', 'Q2:Q4'),
            risk.table.y.text = FALSE, 
            #title = 'THR 50_1 and METABRIC RFS by X3 classifier subtypes: quartiles'
 )
 dev.off()
+
 ####################################################
 ## RFS: quintiles: all
 tiff("/Users/mohamedomar/Library/CloudStorage/Box-Box/TripleHormoneReceptor_THR_Signature/THR50_quintiles/THR50_metabric_rfs_X3_quintiles.tiff", width = 3200, height = 3000, res = 300)
