@@ -401,7 +401,8 @@ table(survival_metabric$Pam50...Claudin.low.subtype)
 
 # keep only basal and claudin subtypes
 survival_metabric_luminal <- survival_metabric[survival_metabric$Pam50...Claudin.low.subtype %in% c("LumA", "LumB"), ] 
-survival_metabric_luminal$Pam50...Claudin.low.subtype <- as.factor(survival_metabric_luminal$Pam50...Claudin.low.subtype)
+survival_metabric_luminal$Pam50...Claudin.low.subtype <- factor(survival_metabric_luminal$Pam50...Claudin.low.subtype, levels = c('LumB', 'LumA'))
+table(survival_metabric_luminal$Pam50...Claudin.low.subtype)
 
 
 # RFS
@@ -410,7 +411,7 @@ Fit_sig_metabric_rfs_luminal <- survfit(Surv(Relapse.Free.Status..Months., Relap
 # RFS COXPH
 survival_metabric_luminal2 <- survival_metabric_luminal
 survival_metabric_luminal2$Pam50...Claudin.low.subtype <- factor(survival_metabric_luminal2$Pam50...Claudin.low.subtype, levels = c('LumA', 'LumB'))
-Fit_sig_metabric_rfs_luminal_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Pam50...Claudin.low.subtype, data = survival_metabric_luminal)
+Fit_sig_metabric_rfs_luminal_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Pam50...Claudin.low.subtype, data = survival_metabric_luminal2)
 summary(Fit_sig_metabric_rfs_luminal_coxph)
 
 
@@ -421,7 +422,7 @@ ggsurvplot(Fit_sig_metabric_rfs_luminal,
            pval = FALSE,
            #palette = cluster_colors,
            xlim = c(0,240),
-           legend.labs = c('Luminal A', 'Luminal B'),
+           legend.labs = c('Luminal B', 'Luminal A'),
            legend.title	= '',
            pval.size = 11,
            break.x.by = 40,

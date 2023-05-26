@@ -257,6 +257,28 @@ Data_T1_mod$predClasses_THR50i20_HER2 <- ifelse(Data_T1_mod$EnrichmentScore_THR5
 table(Data_T1_mod$predClasses_THR50i20_HER2)
 
 ################################################################
+# THR50i20 + HER2 model
+# 4 classes: 
+#i20 plus + HER2 minus
+#i20 plus + HER2 plus
+#i20 minus + HER2 plus
+#i20 plus + HER2 minus
+################################################################
+# Compute the mean expression of c3_gns genes for each sample
+Data_T1_mod$EnrichmentScore_THR50i20 <- rowMeans(Data_T1_mod[, THR50_i20])
+
+# Define the threshold as the median enrichment score
+thr_THR50i20 <- quantile(Data_T1_mod$EnrichmentScore_THR50i20, 0.9)
+
+# Create a new variable for subcluster assignment
+# Create a new variable for subcluster assignment
+Data_T1_mod$predClasses_THR50i20_HER2_4classes <- ifelse(Data_T1_mod$EnrichmentScore_THR50i20 > thr_THR50i20 & Data_T1_mod$HER2.Status == 'Negative', "I20+HER2-",
+                                                ifelse(Data_T1_mod$EnrichmentScore_THR50i20 > thr_THR50i20 & Data_T1_mod$HER2.Status == 'Positive', "I20+HER2+",
+                                                       ifelse(Data_T1_mod$EnrichmentScore_THR50i20 <= thr_THR50i20 & Data_T1_mod$HER2.Status == 'Positive', "I20-HER2+", "I20-HER2-")))
+
+table(Data_T1_mod$predClasses_THR50i20_HER2_4classes)
+
+################################################################
 # THR50-i20 + HER2 logreg model
 ################################################################
 
@@ -319,12 +341,14 @@ predClasses_THR56_T1_THR70i20model <- factor(predClasses_THR56_T1_THR70i20model,
 all(rownames(Data_T1_mod) == rownames(T1_pheno))
 predClasses_i6_HER2 <- Data_T1_mod$predClasses_i6_HER2
 predClasses_THR50i20_HER2 <- Data_T1_mod$predClasses_THR50i20_HER2
+predClasses_THR50i20_HER2_4classes <- Data_T1_mod$predClasses_THR50i20_HER2_4classes
 
 T1_pheno2 <- cbind(T1_pheno[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype")], 
                         THR56_T1_prob_i20model, predClasses_THR56_T1_i20model,
                         THR56_T1_prob_THR50i20_HER2_logreg_model, predClasses_THR56_T1_THR50i20_HER2_logreg_model,
                         THR56_T1_prob_THR70i20model, predClasses_THR56_T1_THR70i20model,
-                        predClasses_THR50i20_HER2, predClasses_i6_HER2
+                        predClasses_THR50i20_HER2, predClasses_i6_HER2,
+                        predClasses_THR50i20_HER2_4classes
 )
 
 
@@ -496,6 +520,48 @@ ggsurvplot(Fit_sig_metabric_RFS_THR56_T1_THR50i20_HER2_model,
 dev.off()
 
 #########################################
+# using the THR50 derived i20 + HER2: 4 classes
+#########################################
+
+classes <- levels(factor(CoxData_metabric_T1$predClasses_THR50i20_HER2_4classes))
+
+# OS
+Fit_sig_metabric_os_THR56_T1_THR50i20_HER2_4classes_model <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR50i20_HER2_4classes, data = CoxData_metabric_T1)
+
+# RFS
+Fit_sig_metabric_RFS_THR56_T1_THR50i20_HER2_4classes_model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR50i20_HER2_4classes, data = CoxData_metabric_T1)
+
+
+# plot OS
+tiff("./figures/logreg/THR56_clusters/THR56_metabric_os_T1_THR50i20_HER2_4classes_model.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR56_T1_THR50i20_HER2_4classes_model,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = classes,
+           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           title = 'OS in METABRIC in T1 class derived from THR56: THR50-i20 + HER2'
+)
+dev.off()
+
+###########################
+# plot RFS
+tiff("./figures/logreg/THR56_clusters/THR56_metabric_rfs_T1_THR50i20_HER2_4classes_model.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR56_T1_THR50i20_HER2_4classes_model,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = classes,
+           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           title = 'RFS in METABRIC in T1 class derived from THR56: THR50-i20 + HER2'
+)
+dev.off()
+
+#########################################
 # using the THR70 derived i20 model
 #########################################
 
@@ -547,6 +613,9 @@ levels(T1_pheno2$THR_clusters_i6_HER2) <- c('T1a', 'T1b')
 T1_pheno2$THR_clusters_THR50i20_HER2 <- as.factor(T1_pheno2$predClasses_THR50i20_HER2)
 levels(T1_pheno2$THR_clusters_THR50i20_HER2) <- c('T1a', 'T1b')
 
+T1_pheno2$THR_clusters_THR50i20_HER2_4classes <- as.factor(T1_pheno2$predClasses_THR50i20_HER2_4classes)
+levels(T1_pheno2$THR_clusters_THR50i20_HER2_4classes) <- c("I20-HER2-", "I20-HER2+", "I20+HER2-", "I20+HER2+")
+
 T1_pheno2$THR_clusters_THR70i20model <- as.factor(T1_pheno2$predClasses_THR56_T1_THR70i20model)
 levels(T1_pheno2$THR_clusters_THR70i20model) <- c('T1a', 'T1b')
 
@@ -555,6 +624,7 @@ T1 <- data.frame(THR_clusters_i20model = T1_pheno2$THR_clusters_i20model,
                  THR_clusters_THR70i20model = T1_pheno2$THR_clusters_THR70i20model,
                  THR_clusters_i6_HER2 = T1_pheno2$THR_clusters_i6_HER2,
                  THR_clusters_THR50i20_HER2 = T1_pheno2$THR_clusters_THR50i20_HER2,
+                 THR_clusters_THR50i20_HER2_4classes = T1_pheno2$THR_clusters_THR50i20_HER2_4classes,
                  `Sample.ID` = rownames(T1_pheno))
 
 rownames(T1) <- rownames(T1_pheno)
@@ -567,16 +637,19 @@ Pheno_metabric$`THR clusters`[Pheno_metabric$`THR clusters` == 'T1'] <- NA
 Pheno_metabric2 <- merge(x = T1, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
 
 Pheno_metabric2 <- Pheno_metabric2 %>% 
-  mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i20model = as.factor(THR_clusters_i20model), THR_clusters_THR70i20model = as.factor(THR_clusters_THR70i20model), THR_clusters_i6_HER2 = as.factor(THR_clusters_i6_HER2), THR_clusters_THR50i20_HER2 = as.factor(THR_clusters_THR50i20_HER2)) %>%
+  mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i20model = as.factor(THR_clusters_i20model), THR_clusters_THR70i20model = as.factor(THR_clusters_THR70i20model), THR_clusters_i6_HER2 = as.factor(THR_clusters_i6_HER2), THR_clusters_THR50i20_HER2 = as.factor(THR_clusters_THR50i20_HER2), THR_clusters_THR50i20_HER2_4classes = as.factor(THR_clusters_THR50i20_HER2_4classes)) %>%
   mutate(THR.clusters_i20model_Merged = coalesce(THR_clusters_i20model,`THR clusters`)) %>%
   mutate(THR.clusters_THR70i20model_Merged = coalesce(THR_clusters_THR70i20model,`THR clusters`)) %>%
   mutate(THR.clusters_i6_HER2_Merged = coalesce(THR_clusters_i6_HER2,`THR clusters`)) %>%
-  mutate(THR.clusters_THR50i20_HER2_Merged = coalesce(THR_clusters_THR50i20_HER2,`THR clusters`))
+  mutate(THR.clusters_THR50i20_HER2_Merged = coalesce(THR_clusters_THR50i20_HER2,`THR clusters`)) %>%
+  mutate(THR.clusters_THR50i20_HER2_4classes_Merged = coalesce(THR_clusters_THR50i20_HER2_4classes,`THR clusters`))
+
 
 
 
 table(Pheno_metabric2$THR.clusters_i20model_Merged, Pheno_metabric2$THR.clusters_THR70i20model_Merged)
 table(Pheno_metabric2$THR.clusters_i20model_Merged, Pheno_metabric2$THR.clusters_i6_HER2_Merged)
+table(Pheno_metabric2$THR.clusters_THR50i20_HER2_Merged, Pheno_metabric2$THR.clusters_i6_HER2_Merged)
 
 ###########################################################################################
 ##########################################################################################
@@ -590,7 +663,8 @@ survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Sur
                                          "THR.clusters_i20model_Merged",
                                          "THR.clusters_THR70i20model_Merged",
                                          "THR.clusters_i6_HER2_Merged",
-                                         "THR.clusters_THR50i20_HER2_Merged"
+                                         "THR.clusters_THR50i20_HER2_Merged",
+                                         "THR.clusters_THR50i20_HER2_4classes_Merged"
 )] 
 
 survival_metabric$THR.clusters_i20model_Merged <- as.factor(survival_metabric$THR.clusters_i20model_Merged)
@@ -601,6 +675,9 @@ survival_metabric$THR.clusters_i6_HER2_Merged <- droplevels(survival_metabric$TH
 
 survival_metabric$THR.clusters_THR50i20_HER2_Merged <- as.factor(survival_metabric$THR.clusters_THR50i20_HER2_Merged)
 survival_metabric$THR.clusters_THR50i20_HER2_Merged <- droplevels(survival_metabric$THR.clusters_THR50i20_HER2_Merged)
+
+survival_metabric$THR.clusters_THR50i20_HER2_4classes_Merged <- as.factor(survival_metabric$THR.clusters_THR50i20_HER2_4classes_Merged)
+survival_metabric$THR.clusters_THR50i20_HER2_4classes_Merged <- droplevels(survival_metabric$THR.clusters_THR50i20_HER2_4classes_Merged)
 
 survival_metabric$THR.clusters_THR70i20model_Merged <- as.factor(survival_metabric$THR.clusters_THR70i20model_Merged)
 survival_metabric$THR.clusters_THR70i20model_Merged <- droplevels(survival_metabric$THR.clusters_THR70i20model_Merged)
@@ -722,6 +799,47 @@ ggsurvplot(Fit_metabric_RFS_THR50i20_HER2,
            #palette = cluster_colors,
            #xlim = c(0,120),
            legend.labs = levels(survival_metabric$THR.clusters_THR50i20_HER2_Merged),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR56 clusters and RFS: THR56 + THR50-i20 + HER2')
+dev.off()
+
+################################################################
+## Survival curves: THR50-i20 + HER2: 4 classes
+################################################################
+
+# OS
+Fit_metabric_os_THR50i20_HER2_4classes <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_THR50i20_HER2_4classes_Merged, data = survival_metabric)
+
+# RFS
+Fit_metabric_RFS_THR50i20_HER2_4classes <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_THR50i20_HER2_4classes_Merged, data = survival_metabric)
+
+pdf("./figures/logreg/THR56_clusters/metabric_os_5clusters_THR50i20_HER2_4classes_Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_os_THR50i20_HER2_4classes,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_THR50i20_HER2_4classes_Merged),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR56 clusters and OS: THR56 + THR50-i20 + HER2')
+dev.off()
+
+## RFS: 
+pdf("./figures/logreg/THR56_clusters/metabric_RFS_5clusters_THR50i20_HER2_4classes_Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_RFS_THR50i20_HER2_4classes,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_THR50i20_HER2_4classes_Merged),
            legend.title	= 'THR clusters',
            pval.size = 12,
            #break.x.by = 20,
