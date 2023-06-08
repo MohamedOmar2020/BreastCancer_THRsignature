@@ -169,7 +169,7 @@ table(AnnAll_metabric$`THR clusters`)
 
 
 ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
-levels(AnnAll_metabric$`THR clusters`) <- c('E2b', 'E2a', 'E1', 'E3', 'PNBC')
+levels(AnnAll_metabric$`THR clusters`) <- c('E2b', 'E2a', 'E1', 'E3', 'PQNBC')
 # fix the color pallete to match that of THR50
 ann_colors$`THR clusters` <- c("#66A61E", "#E7298A", "#1B9E77" , "#D95F02", "#7570B3") 
 names(ann_colors$`THR clusters`) <- levels(AnnAll_metabric$`THR clusters`)

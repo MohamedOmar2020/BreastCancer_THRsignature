@@ -501,6 +501,7 @@ ggsurvplot(Fit_sig_metabric_RFS_THR50_c3_model20,
            risk.table = FALSE,
            pval = TRUE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
+           
            ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
@@ -1015,21 +1016,33 @@ ggsurvplot(Fit_metabric_os_model20,
 dev.off()
 
 ## RFS: 
-png("./figures/c3_DE_THR50_RFS/metabric_rfs_5clusters_model20Merged.png", width = 2500, height = 2500, res = 300)
+png("./figures/c3_DE_THR50_RFS/metabric_rfs_5clusters_model20Merged.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_RFS_model20,
            risk.table = FALSE,
            pval = FALSE,
            #palette = cluster_colors,
            xlim = c(0,240),
-           legend.labs = c('T1_a', 'T1_b', 'E3', 'E1', 'E4', 'E2'),
-           legend.title	= 'THR-50 clusters',
+           legend.labs = c('Pi-', 'Pi+', 'E3', 'E1', 'E4', 'E2'),
+           legend.title	= '',
            pval.size = 12,
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR50 clusters and RFS: THR50 + I20'
-           )
+           )+ guides(
+             colour = guide_legend(ncol = 3))
 dev.off()
 
 ################################################################

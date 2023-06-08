@@ -275,7 +275,7 @@ ggsurvplot(Fit_metabric_os_PAM50original,
            #palette = cluster_colors,
            xlim = c(0,240),
            legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
-           legend.title	= 'PAM50 groups',
+           legend.title	= 'clusters',
            pval.size = 12,
            break.x.by = 40,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(17, 'bold', 'black')),
@@ -285,17 +285,28 @@ dev.off()
 
 
 # RFS
-png("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original.png", width = 2500, height = 2500, res = 300)
+png("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_rfs_PAM50original,
            risk.table = FALSE,
            pval = FALSE,
            #palette = cluster_colors,
            xlim = c(0,240),
            legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
-           legend.title	= 'PAM50 groups',
+           legend.title	= '',
            pval.size = 11,
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(17, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'Original PAM50 subtypes and RFS'
@@ -320,10 +331,22 @@ ggsurvplot(Fit_metabric_os_X3,
            #palette = cluster_colors,
            xlim = c(0,240),
            legend.labs = c('TNBC', 'ER+ high proliferation', 'ER+ low proliferation', 'HER2+'),
-           legend.title	= 'X3 classifier groups',
+           legend.title	= '',
            pval.size = 12,
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(17, 'bold', 'black')),
+           ggtheme = theme_survminer(
+             base_size = 18,
+             font.x = c(18, 'bold.italic', 'black'),
+             font.y = c(18, 'bold.italic', 'black'),
+             font.tickslab = c(18, 'plain', 'black'),
+             font.legend = c(17, 'bold', 'black'),
+             axis.line = element_line(colour = "black"),
+             panel.grid.major = element_line(colour = "grey90"),
+             panel.grid.minor = element_line(colour = "grey90"),
+             panel.border = element_blank(),
+             panel.background = element_blank()
+             ),
+           
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE
            ) + guides(
@@ -332,17 +355,28 @@ dev.off()
 
 
 # RFS
-tiff("./figures/logreg/PAM50_clusters/metabric_rfs_X3.tiff", width = 2500, height = 2500, res = 300)
+tiff("./figures/logreg/PAM50_clusters/metabric_rfs_X3.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_rfs_X3,
            risk.table = FALSE,
            pval = FALSE,
            #palette = cluster_colors,
            xlim = c(0,240),
-           legend.labs = c('TNBC', 'ER+ high prolif', 'ER+ low prolif', 'HER2+'),
-           legend.title	= 'X3 classifier groups',
+           legend.labs = c('TNBC', 'ER+ HP', 'ER+ LP', 'HER2+'),
+           legend.title	= '',
            pval.size = 11,
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'Original PAM50 subtypes and RFS'
@@ -373,7 +407,7 @@ summary(Fit_sig_metabric_rfs_basalClaudin_coxph)
 
 
 # RFS
-png("./figures/logreg/PAM50_clusters/metabric_rfs_Basal_vs_claudin.png", width = 2200, height = 2200, res = 300)
+png("./figures/logreg/PAM50_clusters/metabric_rfs_Basal_vs_claudin.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_basalClaudin,
            risk.table = FALSE,
            pval = FALSE,
@@ -383,7 +417,18 @@ ggsurvplot(Fit_sig_metabric_rfs_basalClaudin,
            legend.title	= '',
            pval.size = 11,
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'Original PAM50 subtypes and RFS'
@@ -414,9 +459,8 @@ survival_metabric_luminal2$Pam50...Claudin.low.subtype <- factor(survival_metabr
 Fit_sig_metabric_rfs_luminal_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Pam50...Claudin.low.subtype, data = survival_metabric_luminal2)
 summary(Fit_sig_metabric_rfs_luminal_coxph)
 
-
 # RFS
-png("./figures/logreg/PAM50_clusters/metabric_rfs_LuminalA_vs_B.png", width = 2200, height = 2200, res = 300)
+png("./figures/logreg/PAM50_clusters/metabric_rfs_LuminalA_vs_B.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_luminal,
            risk.table = FALSE,
            pval = FALSE,
@@ -427,7 +471,18 @@ ggsurvplot(Fit_sig_metabric_rfs_luminal,
            pval.size = 11,
            break.x.by = 40,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'Original PAM50 subtypes and RFS'

@@ -528,16 +528,17 @@ dev.off()
 
 ######################################################
 # OS: quartiles: Q1 vs Q4
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_PAM50_Q1vsQ4.tiff", width = 3200, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_PAM50_Q1vsQ4.tiff", width = 3000, height = 2500, res = 300)
 ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ4_PAM,
            risk.table = FALSE,
            pval = FALSE,
            short.panel.labs = T,
            facet.by = "Pam50...Claudin.low.subtype",
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
            palette = 'jco',
            legend.title	= 'Quartiles',
            legend.labs = c('Q1', 'Q4'),
+           xlim = c(0,240),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR 50_1 and METABRIC OS by PAM50 subtypes: Q1 vs Q4'
@@ -811,16 +812,17 @@ dev.off()
 ####################################################
 # OS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_Q1vsQ4.tiff", width = 3000, height = 2800, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_Q1vsQ4.tiff", width = 3000, height = 2500, res = 300)
 ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ4_X3,
            risk.table = FALSE,
            pval = FALSE,
            short.panel.labs = T,
            facet.by = "X3.Gene.classifier.subtype",
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
            legend.title	= 'Quartiles',
            legend.labs = c('Q1', 'Q4'),
+           xlim = c(0,240),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR 50_1 and METABRIC OS by X3 classifier subtypes: Q1 vs Q4'

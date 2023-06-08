@@ -398,10 +398,13 @@ Fit_sig_metabric_rfs_THR50_Q1vsQ5_X3 <- survfit(Surv(Relapse.Free.Status..Months
 # plot OS
 
 tiff("./figures/logreg/oct10/THR50_1_metabric_os_allpairs.tiff", width = 3000, height = 3000, res = 300)
-ggsurvplot(Fit_sig_metabric_os_THR50_1,
+ggsurvplot(Fit_sig_metabric_os_THR50,
            risk.table = FALSE,
            pval = FALSE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
+           legend.title = '',
+           xlim = c(0,240),
+           break.x.by = 40,
            ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            palette = 'jco',
@@ -442,10 +445,12 @@ dev.off()
 ######################################
 # plot RFS
 tiff("./figures/logreg/oct10/THR50_metabric_RFS_allpairs.tiff", width = 3000, height = 3000, res = 300)
-ggsurvplot(Fit_sig_metabric_RFS_THR50_1,
+ggsurvplot(Fit_sig_metabric_RFS_THR50,
            risk.table = FALSE,
            pval = FALSE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
+           xlim = c(0,240),
+           break.x.by = 40,
            ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
@@ -558,7 +563,7 @@ dev.off()
 ######################################################
 # OS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/OS/Q1_vs_Q4/THR50_1_metabric_os_PAM50_Q1vsQ4.tiff", width = 3200, height = 2200, res = 300)
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/OS/Q1_vs_Q4/THR50_1_metabric_os_PAM50_Q1vsQ4.tiff", width = 3200, height = 3200, res = 300)
 ggsurvplot(Fit_sig_metabric_os_THR50_Q1vsQ4_PAM,
            risk.table = FALSE,
            pval = TRUE,
@@ -568,7 +573,7 @@ ggsurvplot(Fit_sig_metabric_os_THR50_Q1vsQ4_PAM,
            pval.size = 15,
            #break.x.by = 20,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
            legend.labs = c('Q1', 'Q4'),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
@@ -630,18 +635,20 @@ dev.off()
 #############################
 # RFS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_PAM50_Q1vsQ4.tiff", width = 3200, height = 2200, res = 300)
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_PAM50_Q1vsQ4.tiff", width = 3000, height = 2400, res = 300)
 ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_PAM,
            risk.table = FALSE,
+           nrow=2, ncol=3,
            pval = F,
            short.panel.labs = T,
            facet.by = "Pam50...Claudin.low.subtype",
            #legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
            legend.title	= 'Quartiles',
            pval.size = 15,
-           #break.x.by = 20,
+           xlim = c(0,240),
+           #break.x.by = 40,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            legend.labs = c('Q1', 'Q4'),
            risk.table.y.text = FALSE, 
@@ -913,17 +920,29 @@ CoxData_metabric_HER2_2$metabric_prob_THR50_quartiles <- factor(CoxData_metabric
 Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quartiles, data = CoxData_metabric_HER2_2)
 summary(Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest_coxph)
 
-tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/all_quartiles/metabric_rfs_THR50_HER2_Q1vsRest.tiff", width = 2200, height = 2200, res = 300)
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/all_quartiles/metabric_rfs_THR50_HER2_Q1vsRest.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR50_HER2_Q1vsRest,
            risk.table = FALSE,
            pval = FALSE,
            short.panel.labs = T,
-           legend.title	= '75% cutoff',
+           legend.title	= 'THR-50',
            pval.size = 15,
            xlim = c(0,240),
            break.x.by = 40,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 25, font.x = c(25, 'bold.italic', 'black'), font.y = c(25, 'bold.italic', 'black'), font.tickslab = c(25, 'plain', 'black'), font.legend = c(25, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ), 
            risk.table.y.text.col = FALSE,
            legend.labs = c('Q1', 'Q2:Q4'),
            risk.table.y.text = FALSE, 
@@ -953,17 +972,18 @@ dev.off()
 ###############################################################
 # RFS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_X3_Q1vsQ4.tiff", width = 3000, height = 2200, res = 300)
-ggsurvplot(Fit_sig_metabric_rfs_THR50_1_Q1vsQ4_X3,
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_X3_Q1vsQ4.tiff", width = 3000, height = 2500, res = 300)
+ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_X3,
            risk.table = FALSE,
            pval = F,
            short.panel.labs = T,
            facet.by = "X3.Gene.classifier.subtype",
            legend.title	= 'Quartiles',
            pval.size = 15,
+           xlim = c(0,240),
            #break.x.by = 20,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            legend.labs = c('Q1', 'Q4'),
            risk.table.y.text = FALSE, 
@@ -999,28 +1019,15 @@ dev.off()
 ########
 ## OS
 
-# by probaility
+# by prob
+Fit_sig_metabric_os_coxph_THR50 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR50, data = CoxData_metabric)
+summary(Fit_sig_metabric_os_coxph_THR50)
 
-#Fit_sig_metabric_os_coxph_THR25 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR25, data = CoxData_metabric)
-#summary(Fit_sig_metabric_os_coxph_THR25)
+# by class
 
-Fit_sig_metabric_os_coxph_THR50_1 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR50_1, data = CoxData_metabric)
-summary(Fit_sig_metabric_os_coxph_THR50_1)
+Fit_sig_metabric_os_coxph_THR50 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50, data = CoxData_metabric)
+summary(Fit_sig_metabric_os_coxph_THR50)
 
-#Fit_sig_metabric_os_coxph_THR50_2 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR50_2, data = CoxData_metabric)
-#summary(Fit_sig_metabric_os_coxph_THR50_2)
-
-#png('./figures/logreg/THR25_HR_metabric_os.png', width = 2000, height = 2000, res = 300)
-#ggforest(Fit_sig_metabric_coxph_THR25, fontsize = 0.5)
-#dev.off()
-
-#png('./figures/logreg/THR50_1_HR_metabric_os.png', width = 2000, height = 2000, res = 300)
-#ggforest(Fit_sig_metabric_coxph_THR50_1, fontsize = 0.5)
-#dev.off()
-
-#png('./figures/logreg/THR50_2_HR_metabric_os.png', width = 2000, height = 2000, res = 300)
-#ggforest(Fit_sig_metabric_coxph_THR50_2, fontsize = 0.5)
-#dev.off()
 
 ########
 ## by quartiles
@@ -1077,16 +1084,12 @@ summary_metabric_os_coxph_THR50_1_quartiles <- summary(Fit_sig_metabric_os_coxph
 # RFS
 
 # by probaility
+Fit_sig_metabric_RFS_coxph_THR50 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR50, data = CoxData_metabric)
+summary(Fit_sig_metabric_RFS_coxph_THR50)
 
-#Fit_sig_metabric_RFS_coxph_THR25 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR25, data = CoxData_metabric)
-#summary(Fit_sig_metabric_RFS_coxph_THR25)
-
-Fit_sig_metabric_RFS_coxph_THR50_1 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR50_1, data = CoxData_metabric)
-summary(Fit_sig_metabric_RFS_coxph_THR50_1)
-
-#Fit_sig_metabric_RFS_coxph_THR50_2 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR50_2, data = CoxData_metabric)
-#summary(Fit_sig_metabric_RFS_coxph_THR50_2)
-
+# by class
+Fit_sig_metabric_RFS_coxph_THR50 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR50, data = CoxData_metabric)
+summary(Fit_sig_metabric_RFS_coxph_THR50)
 
 ########
 ## by quartiles
