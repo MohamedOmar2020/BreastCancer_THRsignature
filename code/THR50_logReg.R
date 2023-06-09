@@ -397,7 +397,7 @@ Fit_sig_metabric_rfs_THR50_Q1vsQ5_X3 <- survfit(Surv(Relapse.Free.Status..Months
 ############################################################################
 # plot OS
 
-tiff("./figures/logreg/oct10/THR50_1_metabric_os_allpairs.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/logreg/oct10/THR50_1_metabric_os_allpairs.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR50,
            risk.table = FALSE,
            pval = FALSE,
@@ -405,7 +405,18 @@ ggsurvplot(Fit_sig_metabric_os_THR50,
            legend.title = '',
            xlim = c(0,240),
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            palette = 'jco',
            risk.table.y.text = FALSE, 
@@ -415,12 +426,23 @@ dev.off()
 
 ########
 # by quartiles
-tiff("./figures/logreg/oct10/THR50_metabric_os_quartiles.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/logreg/oct10/THR50_metabric_os_quartiles.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR50_quartiles,
            risk.table = FALSE,
            pval = FALSE,
            legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
-           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            palette = 'jco',
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
@@ -430,28 +452,51 @@ dev.off()
 
 #############
 # by quintiles
-tiff("./figures/logreg/oct10/THR50_metabric_os_quintiles.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/logreg/oct10/THR50_metabric_os_quintiles.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR50_quintiles,
            risk.table = FALSE,
            pval = FALSE,
            legend.labs = c('Q1', 'Q2', 'Q3', 'Q4', 'Q5'),
-           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            palette = 'jco',
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR 50_1 (logistic regression) and METABRIC OS: quartiles'
 )
 dev.off()
+
 ######################################
 # plot RFS
-tiff("./figures/logreg/oct10/THR50_metabric_RFS_allpairs.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/logreg/oct10/THR50_metabric_RFS_allpairs.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_RFS_THR50,
            risk.table = FALSE,
            pval = FALSE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
            xlim = c(0,240),
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            palette = 'jco',
@@ -635,7 +680,7 @@ dev.off()
 #############################
 # RFS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_PAM50_Q1vsQ4.tiff", width = 3000, height = 2400, res = 300)
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_PAM50_Q1vsQ4.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_PAM,
            risk.table = FALSE,
            nrow=2, ncol=3,
@@ -648,7 +693,20 @@ ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_PAM,
            xlim = c(0,240),
            #break.x.by = 40,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ), 
            risk.table.y.text.col = FALSE,
            legend.labs = c('Q1', 'Q4'),
            risk.table.y.text = FALSE, 
@@ -972,7 +1030,7 @@ dev.off()
 ###############################################################
 # RFS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_X3_Q1vsQ4.tiff", width = 3000, height = 2500, res = 300)
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_X3_Q1vsQ4.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_X3,
            risk.table = FALSE,
            pval = F,
@@ -983,7 +1041,20 @@ ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_X3,
            xlim = c(0,240),
            #break.x.by = 20,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ), 
            risk.table.y.text.col = FALSE,
            legend.labs = c('Q1', 'Q4'),
            risk.table.y.text = FALSE, 

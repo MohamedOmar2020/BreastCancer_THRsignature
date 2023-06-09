@@ -221,6 +221,17 @@ Fit_metabric_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Stat
 # RFS
 Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ as.factor(`THR clusters`), data = survival_metabric)
 
+####################
+# with E2 merged
+survival_metabric2 <- survival_metabric
+levels(survival_metabric2$`THR clusters`) <- c("E1", "E2", 'E2', 'E3', 'PQNBC') 
+
+# OS
+Fit_metabric_os_2 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~  as.factor(`THR clusters`), data = survival_metabric2)
+
+# RFS
+Fit_metabric_RFS_2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~  as.factor(`THR clusters`), data = survival_metabric2)
+
 ############################################################################
 ############################################################################
 # plot OS
@@ -228,6 +239,7 @@ Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Stat
 #cluster_colors <- levels(survival_metabric$`THR clusters`)
 
 cluster_colors <- c("#1B9E77", "#E7298A", "#66A61E" , "#D95F02", "#7570B3") 
+cluster_colors2 <- c('#1B9E77', "#c1b026", "#D95F02", '#7570B3')
 
 #names(ann_colors$`THR clusters`) <- levels(survival_metabric$`THR clusters`)
 #cluster_colors <- as.vector(ann_colors$`THR clusters`)
@@ -252,20 +264,105 @@ dev.off()
 
 
 # plot RFS
-png("./figures/logreg/THR70_clusters/metabric_rfs_5clusters_20yrs.png", width = 2200, height = 2000, res = 260)
+png("./figures/logreg/THR70_clusters/metabric_rfs_5clusters_20yrs.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
            xlim = c(0,240),
-           legend.labs = levels(survival_metabric$`THR clusters`),
-           legend.title	= 'THR clusters',
-           pval.size = 12,
+           legend.labs = c("E1", "E2a", "E2b", "E3", "PQNBC"),
+           legend.title	= '',
+           pval.size = 10,
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR70 clusters and RFS'
-           )
+           ) + guides(
+             colour = guide_legend(ncol = 3))
 dev.off()
+
+## same with merged E2a and E2b
+png("./figures/logreg/THR70_clusters/metabric_rfs_5clusters_20yrs_E2merged.png", width = 2000, height = 2000, res = 350)
+ggsurvplot(Fit_metabric_RFS_2,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette =  cluster_colors2,
+           xlim = c(0,240),
+           legend.labs = c("E1", "E2","E3", "PQNBC"),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS: THR70 + I20'
+) + guides(
+  colour = guide_legend(ncol = 2))
+dev.off()
+
+###############################################################
+# Venn diagram of PAM50 groups within THR-70 clusters
+library(ggvenn)
+library(UpSetR)
+
+## prepare the data
+# create a dataframe
+df <- data.frame(
+  'PAM50 groups' = survival_metabric2$Pam50...Claudin.low.subtype,
+  'THR groups' = survival_metabric2$`THR clusters`,
+  'sample_id' = rownames(survival_metabric2)
+)
+
+# Convert each unique group to a list
+pam50_list <- split(df$sample_id, df$PAM50.groups)
+thr_list <- split(df$sample_id, df$THR.groups)
+
+# Combine the lists
+group_lists <- c(pam50_list, thr_list)
+
+ggvenn(
+  group_lists,
+  #fill_color = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF"),
+  #stroke_size = 0.5, set_name_size = 4
+)
+
+# Convert the list to a data frame suitable for UpSet plot
+upset_data <- fromList(group_lists)
+
+# Generate the UpSet plot
+png("./figures/logreg/THR70_clusters/THR70_PAM50_intersection.png", width = 2500, height = 2000, res = 300)
+upset(upset_data, 
+      nsets = 9, 
+      sets = rev(c('LumA', 'LumB', 'Her2', 'Basal', 'claudin-low', 'E1', 'E2', 'E3', 'PQNBC')),
+      mainbar.y.label = "N of samples in common",
+      sets.x.label = "N of samples per group",
+      keep.order = TRUE,
+      sets.bar.color = c('Blue', 'Blue', 'Blue', 'Blue', 'Blue', 'Red', 'Red', 'Red', 'Red')
+      )
+dev.off()
+
+
 

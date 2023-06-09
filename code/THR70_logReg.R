@@ -474,13 +474,26 @@ dev.off()
 # RFS
 
 
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_PAM50.tiff", width = 3200, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_PAM50.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR70_PAM,
            risk.table = FALSE,
            pval = FALSE,
            short.panel.labs = T,
            facet.by = "Pam50...Claudin.low.subtype",
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            palette = 'jco',
@@ -492,16 +505,32 @@ dev.off()
 # OS: quartiles: all
 
 
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_PAM50_quartiles.tiff", width = 3200, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_PAM50_quartiles.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR70_quartiles_PAM,
            risk.table = FALSE,
            pval = TRUE,
+           pval.size = 14,
            short.panel.labs = T,
            facet.by = "Pam50...Claudin.low.subtype",
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ),
            palette = 'jco',
            legend.title	= 'Quartiles',
            legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
+           xlim = c(0,240),
+           #break.x.by = 40,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR 50_1 and METABRIC OS by PAM50 subtypes: quartiles'
@@ -528,13 +557,26 @@ dev.off()
 
 ######################################################
 # OS: quartiles: Q1 vs Q4
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_PAM50_Q1vsQ4.tiff", width = 3000, height = 2500, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_PAM50_Q1vsQ4.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ4_PAM,
            risk.table = FALSE,
            pval = FALSE,
            short.panel.labs = T,
            facet.by = "Pam50...Claudin.low.subtype",
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ), 
            palette = 'jco',
            legend.title	= 'Quartiles',
            legend.labs = c('Q1', 'Q4'),
@@ -566,13 +608,28 @@ dev.off()
 #############################
 # RFS: quartiles: all
 
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_PAM50_quartiles.tiff", width = 3200, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_PAM50_quartiles.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR70_quartiles_PAM,
            risk.table = FALSE,
            pval = TRUE,
+           pval.size = 16,
            short.panel.labs = T,
            facet.by = "Pam50...Claudin.low.subtype",
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           xlim = c(0,240),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ),
            palette = 'jco',
            legend.title	= 'Quartiles',
            risk.table.y.text.col = FALSE,
@@ -602,7 +659,7 @@ dev.off()
 
 #############################
 # RFS: quartiles: Q1 vs Q4
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_PAM50_Q1vsQ4.tiff", width = 3200, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_PAM50_Q1vsQ4.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR70_Q1vsQ4_PAM,
            risk.table = FALSE,
            pval = F,
@@ -613,7 +670,21 @@ ggsurvplot(Fit_sig_metabric_rfs_THR70_Q1vsQ4_PAM,
            pval.size = 15,
            #break.x.by = 20,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ), 
+           xlim = c(0,240),
            risk.table.y.text.col = FALSE,
            legend.labs = c('Q1', 'Q4'),
            risk.table.y.text = FALSE, 
@@ -774,14 +845,29 @@ dev.off()
 ####################################################
 # OS: quartiles: all
 
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_quartiles.tiff", width = 3000, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_quartiles.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR70_quartiles_X3,
            risk.table = FALSE,
            pval = TRUE,
+           pval.size = 14,
            short.panel.labs = T,
            facet.by = "X3.Gene.classifier.subtype",
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ), 
+           xlim = c(0,240),
            legend.title	= 'Quartiles',
            legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
            risk.table.y.text.col = FALSE,
@@ -812,14 +898,27 @@ dev.off()
 ####################################################
 # OS: quartiles: Q1 vs Q4
 
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_Q1vsQ4.tiff", width = 3000, height = 2500, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_os_X3_Q1vsQ4.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR70_Q1vsQ4_X3,
            risk.table = FALSE,
            pval = FALSE,
            short.panel.labs = T,
            facet.by = "X3.Gene.classifier.subtype",
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 20, font.x = c(20, 'bold.italic', 'black'), font.y = c(20, 'bold.italic', 'black'), font.tickslab = c(20, 'plain', 'black'), font.legend = c(20, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ), 
            legend.title	= 'Quartiles',
            legend.labs = c('Q1', 'Q4'),
            xlim = c(0,240),
@@ -849,17 +948,31 @@ dev.off()
 
 ###############################################################
 # RFS: quartiles: all
-tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_X3_quartiles.tiff", width = 3000, height = 2200, res = 300)
+tiff("./figures/logreg/THR70_logreg/THR70_metabric_rfs_X3_quartiles.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR70_quartiles_X3,
            risk.table = FALSE,
            pval = TRUE,
            short.panel.labs = T,
            facet.by = "X3.Gene.classifier.subtype",
            legend.title	= 'Quartiles',
-           pval.size = 15,
+           pval.size = 16,
            #break.x.by = 20,
            palette = 'jco',
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(17, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           xlim = c(0,240),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           legend.title = element_text(size = 16, face = 'bold.italic', color = 'black'),
+                           strip.text = element_text(size = 16, face = 'bold.italic', color = 'black')
+           ),
            risk.table.y.text.col = FALSE,
            legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
            risk.table.y.text = FALSE, 

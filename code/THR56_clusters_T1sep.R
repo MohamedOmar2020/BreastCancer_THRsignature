@@ -22,14 +22,36 @@ library(survival)
 library(tidyverse)
 library(pheatmap)
 library(glmnet)
+library(readxl)
 
 #################
+# load the THR signatures
 THR_signature <- readxl::read_xlsx("./data/THR Signatures_sep23.xlsx")
 
 # get the THR50 signature
 THR_50 <- THR_signature$`THR-50.1`[!is.na(THR_signature$`THR-50.1`)]
 
 THR_50 <- gsub('-', '', THR_50)
+
+################
+# load the ET signatures
+################
+ET_signatures <- read_xlsx('objs/ET-9 Selection Steps.xlsx')
+ET60 <- ET_signatures$`ET-60`[!is.na(ET_signatures$`ET-60`)]
+ET9 <- ET_signatures$`ET-9`[!is.na(ET_signatures$`ET-9`)]
+
+################
+# fix gene names
+################
+ET60[ET60=='ADGRG1'] <- 'GPR56'
+ET60[ET60=='DENND6B'] <- 'FAM116B'
+ET60[ET60=='TENT5B'] <- 'FAM46B'
+ET60[ET60=='HSA011916'] <- 'CTDNEP1'
+
+ET9[ET9=='ADGRG1'] <- 'GPR56'
+ET9[ET9=='DENND6B'] <- 'FAM116B'
+ET9[ET9=='TENT5B'] <- 'FAM46B'
+ET9[ET9=='HSA011916'] <- 'CTDNEP1'
 
 ################
 # Load the  expression and pheno data
@@ -42,6 +64,11 @@ rownames(Expr_metabric_refAll)[grep('^ZNF652', rownames(Expr_metabric_refAll))]
 THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_metabric_refAll)]
 
 THR_56 <- c(THR_50_fil, 'CDC20', 'LMNB2', 'KIF2C', 'FAM64A', 'KIF4A', 'TPX2')
+
+# same for ET60 and ET9
+ET60_fil <- ET60[ET60 %in% rownames(Expr_metabric_refAll)]
+ET9_fil <- ET9[ET9 %in% rownames(Expr_metabric_refAll)]
+
 
 #############################################################################################
 #############################################################################################
@@ -219,7 +246,7 @@ I20common
 ################################################################
 i20model <- glm(as.formula((paste("RFS_T1 ~", paste(THR50_i20, collapse = "+")))), data = Data_T1, family = "binomial")
 summary(i20model)
-save(i20model, file = './objs/THR50i20model_onTHR56clusters.rda')
+#save(i20model, file = './objs/THR50i20model_onTHR56clusters.rda')
 
 ################################################################
 # i6 (common between THR50i20 and THR70i20) + HER2 model
@@ -284,7 +311,7 @@ table(Data_T1_mod$predClasses_THR50i20_HER2_4classes)
 
 THR50i20_HER2_logreg_model <- glm(as.formula((paste("RFS_T1 ~", paste(c(THR50_i20, 'HER2.Status'), collapse = "+")))), data = Data_T1_mod, family = "binomial")
 summary(THR50i20_HER2_logreg_model)
-save(THR50i20_HER2_logreg_model, file = './objs/THR50i20_HER2_logreg_model_onTHR56clusters.rda')
+#save(THR50i20_HER2_logreg_model, file = './objs/THR50i20_HER2_logreg_model_onTHR56clusters.rda')
 
 ################################################################
 # THR70 i20 model
@@ -296,7 +323,39 @@ colnames(Data_T1)[colnames(Data_T1) == 'HLA-DOB'] <- 'HLA_DOB'
 
 THR70i20model <- glm(as.formula((paste("RFS_T1 ~", paste(THR70_i20, collapse = "+")))), data = Data_T1, family = "binomial")
 summary(THR70i20model)
-save(THR70i20model, file = './objs/THR70i20model_onTHR56clusters.rda')
+#save(THR70i20model, file = './objs/THR70i20model_onTHR56clusters.rda')
+
+################################################################
+# ET60 model
+################################################################
+ET60model <- glm(as.formula((paste("RFS_T1 ~", paste(ET60_fil, collapse = "+")))), data = Data_T1, family = "binomial")
+summary(ET60model)
+#save(ET60model, file = './objs/ET60model_onTHR56clusters.rda')
+
+################################################################
+# ET9 model
+################################################################
+ET9model <- glm(as.formula((paste("RFS_T1 ~", paste(ET9_fil, collapse = "+")))), data = Data_T1, family = "binomial")
+summary(ET9model)
+#save(ET9model, file = './objs/ET9model_onTHR56clusters.rda')
+
+################################################################
+# CCP model
+################################################################
+CCP_genes <- c('FOXM1',	'ASPM',	'TK1',	'PRC1',
+               'CDC20',	'BUB1B',	'PBK',	'DTL',
+               'CDKN3',	'RRM2',	'ASF1B',	'CEP55',
+               'CDC2',	'DLGAP5',	'C18orf24',	'RAD51',
+               'KIF11',	'BIRC5',	'RAD54L',	'CENPM',
+               'KIAA0101',	'KIF20A',	'PTTG1',	'CDCA8',
+               'NUSAP1',	'PLK1',	'CDCA3',	'ORC6L',
+               'CENPF',	'TOP2A',	'MCM10')
+
+CCP_genes <- CCP_genes[CCP_genes %in% rownames(Expr_metabric_refAll)]
+
+CCPmodel <- glm(as.formula((paste("RFS_T1 ~", paste(CCP_genes, collapse = "+")))), data = Data_T1, family = "binomial")
+summary(CCPmodel)
+#save(CCPmodel, file = './objs/CCPmodel_onTHR56clusters.rda')
 
 ############################################################################
 # Make predictions
@@ -304,11 +363,17 @@ save(THR70i20model, file = './objs/THR70i20model_onTHR56clusters.rda')
 THR56_T1_prob_i20model <- i20model %>% predict(Data_T1 , type = "response")
 THR56_T1_prob_THR50i20_HER2_logreg_model <- THR50i20_HER2_logreg_model %>% predict(Data_T1_mod , type = "response")
 THR56_T1_prob_THR70i20model <- THR70i20model %>% predict(Data_T1 , type = "response")
+THR56_T1_prob_ET60model <- ET60model %>% predict(Data_T1 , type = "response")
+THR56_T1_prob_ET9model <- ET9model %>% predict(Data_T1 , type = "response")
+THR56_T1_prob_CCPmodel <- CCPmodel %>% predict(Data_T1 , type = "response")
 
 ### Threshold
 thr_THR56_T1_i20model <- coords(roc(RFS_T1, THR56_T1_prob_i20model, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR56_T1_THR50i20_HER2_logreg_model <- coords(roc(RFS_T1, THR56_T1_prob_THR50i20_HER2_logreg_model, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 thr_THR56_T1_THR70i20model <- coords(roc(RFS_T1, THR56_T1_prob_THR70i20model, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+thr_THR56_T1_ET60model <- coords(roc(RFS_T1, THR56_T1_prob_ET60model, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+thr_THR56_T1_ET9model <- coords(roc(RFS_T1, THR56_T1_prob_ET9model, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+thr_THR56_T1_CCPmodel <- coords(roc(RFS_T1, THR56_T1_prob_CCPmodel, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 
 
 ### ROC Curve
@@ -320,6 +385,15 @@ ROC_THR56_T1_THR50i20_HER2_logreg_model
 
 ROC_THR56_T1_THR70i20model <- roc(RFS_T1, THR56_T1_prob_THR70i20model, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
 ROC_THR56_T1_THR70i20model
+
+ROC_THR56_T1_ET60model <- roc(RFS_T1, THR56_T1_prob_ET60model, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROC_THR56_T1_ET60model
+
+ROC_THR56_T1_ET9model <- roc(RFS_T1, THR56_T1_prob_ET9model, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROC_THR56_T1_ET9model
+
+ROC_THR56_T1_CCPmodel <- roc(RFS_T1, THR56_T1_prob_CCPmodel, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROC_THR56_T1_CCPmodel
 
 ### Get predictions based on best threshold from ROC curve
 predClasses_THR56_T1_i20model <- ifelse(THR56_T1_prob_i20model >= thr_THR56_T1_i20model$threshold, "longSurv", "shortSurv")
@@ -336,6 +410,21 @@ predClasses_THR56_T1_THR70i20model <- ifelse(THR56_T1_prob_THR70i20model >= thr_
 table(predClasses_THR56_T1_THR70i20model)
 predClasses_THR56_T1_THR70i20model <- factor(predClasses_THR56_T1_THR70i20model, levels = c('longSurv', 'shortSurv'))
 
+### Get predictions based on best threshold from ROC curve: ET60
+predClasses_THR56_T1_ET60model <- ifelse(THR56_T1_prob_ET60model >= thr_THR56_T1_ET60model$threshold, "longSurv", "shortSurv")
+table(predClasses_THR56_T1_ET60model)
+predClasses_THR56_T1_ET60model <- factor(predClasses_THR56_T1_ET60model, levels = c('longSurv', 'shortSurv'))
+
+### Get predictions based on best threshold from ROC curve: ET9
+predClasses_THR56_T1_ET9model <- ifelse(THR56_T1_prob_ET9model >= thr_THR56_T1_ET9model$threshold, "longSurv", "shortSurv")
+table(predClasses_THR56_T1_ET9model)
+predClasses_THR56_T1_ET9model <- factor(predClasses_THR56_T1_ET9model, levels = c('longSurv', 'shortSurv'))
+
+### Get predictions based on best threshold from ROC curve: Ki67
+predClasses_THR56_T1_CCPmodel <- ifelse(THR56_T1_prob_CCPmodel >= thr_THR56_T1_CCPmodel$threshold, "longSurv", "shortSurv")
+table(predClasses_THR56_T1_CCPmodel)
+predClasses_THR56_T1_CCPmodel <- factor(predClasses_THR56_T1_CCPmodel, levels = c('longSurv', 'shortSurv'))
+
 ######################
 ## Keep only the relevant information (Metastasis Event and Time)
 all(rownames(Data_T1_mod) == rownames(T1_pheno))
@@ -347,6 +436,9 @@ T1_pheno2 <- cbind(T1_pheno[, c("Overall.Survival.Status", "Overall.Survival..Mo
                         THR56_T1_prob_i20model, predClasses_THR56_T1_i20model,
                         THR56_T1_prob_THR50i20_HER2_logreg_model, predClasses_THR56_T1_THR50i20_HER2_logreg_model,
                         THR56_T1_prob_THR70i20model, predClasses_THR56_T1_THR70i20model,
+                        THR56_T1_prob_ET60model, predClasses_THR56_T1_ET60model,
+                        THR56_T1_prob_ET9model, predClasses_THR56_T1_ET9model,
+                        THR56_T1_prob_CCPmodel, predClasses_THR56_T1_CCPmodel,
                         predClasses_THR50i20_HER2, predClasses_i6_HER2,
                         predClasses_THR50i20_HER2_4classes
 )
@@ -601,6 +693,126 @@ ggsurvplot(Fit_sig_metabric_RFS_THR56_T1_THR70i20model,
 )
 dev.off()
 
+#########################################
+# using ET60 model
+#########################################
+
+# OS
+Fit_sig_metabric_os_THR56_T1_ET60model <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR56_T1_ET60model, data = CoxData_metabric_T1)
+
+# RFS
+Fit_sig_metabric_RFS_THR56_T1_ET60model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR56_T1_ET60model, data = CoxData_metabric_T1)
+
+
+# plot OS
+tiff("./figures/logreg/THR56_clusters/THR56_metabric_os_T1_ET60model.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR56_T1_ET60model,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           title = 'OS in METABRIC in T1 class derived from THR56: using ET60'
+)
+dev.off()
+
+######################################
+# plot RFS
+tiff("./figures/logreg/THR56_clusters/THR56_metabric_rfs_T1_ET60model.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR56_T1_ET60model,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           title = 'RFS in METABRIC in T1 class derived from THR56: using ET60'
+)
+dev.off()
+
+#########################################
+# using ET9 model
+#########################################
+
+# OS
+Fit_sig_metabric_os_THR56_T1_ET9model <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR56_T1_ET9model, data = CoxData_metabric_T1)
+
+# RFS
+Fit_sig_metabric_RFS_THR56_T1_ET9model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR56_T1_ET9model, data = CoxData_metabric_T1)
+
+
+# plot OS
+tiff("./figures/logreg/THR56_clusters/THR56_metabric_os_T1_ET9model.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR56_T1_ET9model,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           title = 'OS in METABRIC in T1 class derived from THR56: using ET9'
+)
+dev.off()
+
+######################################
+# plot RFS
+tiff("./figures/logreg/THR56_clusters/THR56_metabric_rfs_T1_ET9model.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR56_T1_ET9model,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           title = 'RFS in METABRIC in T1 class derived from THR56: using ET9'
+)
+dev.off()
+
+#########################################
+# using CCP model
+#########################################
+
+# OS
+Fit_sig_metabric_os_THR56_T1_CCPmodel <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ predClasses_THR56_T1_CCPmodel, data = CoxData_metabric_T1)
+
+# RFS
+Fit_sig_metabric_RFS_THR56_T1_CCPmodel <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ predClasses_THR56_T1_CCPmodel, data = CoxData_metabric_T1)
+
+
+# plot OS
+tiff("./figures/logreg/THR56_clusters/THR56_metabric_os_T1_CCPmodel.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_os_THR56_T1_CCPmodel,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           palette = 'jco',
+           risk.table.y.text = FALSE, 
+           title = 'OS in METABRIC in T1 class derived from THR56: using CCP'
+)
+dev.off()
+
+######################################
+# plot RFS
+tiff("./figures/logreg/THR56_clusters/THR56_metabric_rfs_T1_CCPmodel.tiff", width = 3000, height = 3000, res = 300)
+ggsurvplot(Fit_sig_metabric_RFS_THR56_T1_CCPmodel,
+           risk.table = FALSE,
+           pval = TRUE,
+           legend.labs = c('prediction: 0', 'prediction: 1'),
+           ggtheme = theme_survminer(base_size = 30, font.x = c(30, 'bold.italic', 'black'), font.y = c(30, 'bold.italic', 'black'), font.tickslab = c(30, 'plain', 'black'), font.legend = c(30, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           palette = 'jco',
+           title = 'RFS in METABRIC in T1 class derived from THR56: using CCP'
+)
+dev.off()
+
 ##########################################################################################
 ##########################################################################################
 ## recombine c3 with the rest 
@@ -619,9 +831,21 @@ levels(T1_pheno2$THR_clusters_THR50i20_HER2_4classes) <- c("I20-HER2-", "I20-HER
 T1_pheno2$THR_clusters_THR70i20model <- as.factor(T1_pheno2$predClasses_THR56_T1_THR70i20model)
 levels(T1_pheno2$THR_clusters_THR70i20model) <- c('T1a', 'T1b')
 
+T1_pheno2$THR_clusters_ET60model <- as.factor(T1_pheno2$predClasses_THR56_T1_ET60model)
+levels(T1_pheno2$THR_clusters_ET60model) <- c('T1a', 'T1b')
+
+T1_pheno2$THR_clusters_ET9model <- as.factor(T1_pheno2$predClasses_THR56_T1_ET9model)
+levels(T1_pheno2$THR_clusters_ET9model) <- c('T1a', 'T1b')
+
+T1_pheno2$THR_clusters_CCPmodel <- as.factor(T1_pheno2$predClasses_THR56_T1_CCPmodel)
+levels(T1_pheno2$THR_clusters_CCPmodel) <- c('T1a', 'T1b')
+
 
 T1 <- data.frame(THR_clusters_i20model = T1_pheno2$THR_clusters_i20model,
                  THR_clusters_THR70i20model = T1_pheno2$THR_clusters_THR70i20model,
+                 THR_clusters_ET60model = T1_pheno2$THR_clusters_ET60model,
+                 THR_clusters_ET9model = T1_pheno2$THR_clusters_ET9model,
+                 THR_clusters_CCPmodel = T1_pheno2$THR_clusters_CCPmodel,
                  THR_clusters_i6_HER2 = T1_pheno2$THR_clusters_i6_HER2,
                  THR_clusters_THR50i20_HER2 = T1_pheno2$THR_clusters_THR50i20_HER2,
                  THR_clusters_THR50i20_HER2_4classes = T1_pheno2$THR_clusters_THR50i20_HER2_4classes,
@@ -637,15 +861,15 @@ Pheno_metabric$`THR clusters`[Pheno_metabric$`THR clusters` == 'T1'] <- NA
 Pheno_metabric2 <- merge(x = T1, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
 
 Pheno_metabric2 <- Pheno_metabric2 %>% 
-  mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i20model = as.factor(THR_clusters_i20model), THR_clusters_THR70i20model = as.factor(THR_clusters_THR70i20model), THR_clusters_i6_HER2 = as.factor(THR_clusters_i6_HER2), THR_clusters_THR50i20_HER2 = as.factor(THR_clusters_THR50i20_HER2), THR_clusters_THR50i20_HER2_4classes = as.factor(THR_clusters_THR50i20_HER2_4classes)) %>%
+  mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i20model = as.factor(THR_clusters_i20model), THR_clusters_THR70i20model = as.factor(THR_clusters_THR70i20model), THR_clusters_i6_HER2 = as.factor(THR_clusters_i6_HER2), THR_clusters_THR50i20_HER2 = as.factor(THR_clusters_THR50i20_HER2), THR_clusters_THR50i20_HER2_4classes = as.factor(THR_clusters_THR50i20_HER2_4classes), THR_clusters_ET60model = as.factor(THR_clusters_ET60model), THR_clusters_ET9model = as.factor(THR_clusters_ET9model), THR_clusters_CCPmodel = as.factor(THR_clusters_CCPmodel)) %>%
   mutate(THR.clusters_i20model_Merged = coalesce(THR_clusters_i20model,`THR clusters`)) %>%
   mutate(THR.clusters_THR70i20model_Merged = coalesce(THR_clusters_THR70i20model,`THR clusters`)) %>%
+  mutate(THR.clusters_ET60model_Merged = coalesce(THR_clusters_ET60model,`THR clusters`)) %>%
+  mutate(THR.clusters_ET9model_Merged = coalesce(THR_clusters_ET9model,`THR clusters`)) %>%
+  mutate(THR.clusters_CCPmodel_Merged = coalesce(THR_clusters_CCPmodel,`THR clusters`)) %>%
   mutate(THR.clusters_i6_HER2_Merged = coalesce(THR_clusters_i6_HER2,`THR clusters`)) %>%
   mutate(THR.clusters_THR50i20_HER2_Merged = coalesce(THR_clusters_THR50i20_HER2,`THR clusters`)) %>%
   mutate(THR.clusters_THR50i20_HER2_4classes_Merged = coalesce(THR_clusters_THR50i20_HER2_4classes,`THR clusters`))
-
-
-
 
 table(Pheno_metabric2$THR.clusters_i20model_Merged, Pheno_metabric2$THR.clusters_THR70i20model_Merged)
 table(Pheno_metabric2$THR.clusters_i20model_Merged, Pheno_metabric2$THR.clusters_i6_HER2_Merged)
@@ -662,6 +886,9 @@ survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Sur
                                          "X3.Gene.classifier.subtype", 
                                          "THR.clusters_i20model_Merged",
                                          "THR.clusters_THR70i20model_Merged",
+                                         "THR.clusters_ET60model_Merged",
+                                         "THR.clusters_ET9model_Merged",
+                                         "THR.clusters_CCPmodel_Merged",
                                          "THR.clusters_i6_HER2_Merged",
                                          "THR.clusters_THR50i20_HER2_Merged",
                                          "THR.clusters_THR50i20_HER2_4classes_Merged"
@@ -681,6 +908,15 @@ survival_metabric$THR.clusters_THR50i20_HER2_4classes_Merged <- droplevels(survi
 
 survival_metabric$THR.clusters_THR70i20model_Merged <- as.factor(survival_metabric$THR.clusters_THR70i20model_Merged)
 survival_metabric$THR.clusters_THR70i20model_Merged <- droplevels(survival_metabric$THR.clusters_THR70i20model_Merged)
+
+survival_metabric$THR.clusters_ET60model_Merged <- as.factor(survival_metabric$THR.clusters_ET60model_Merged)
+survival_metabric$THR.clusters_ET60model_Merged <- droplevels(survival_metabric$THR.clusters_ET60model_Merged)
+
+survival_metabric$THR.clusters_ET9model_Merged <- as.factor(survival_metabric$THR.clusters_ET9model_Merged)
+survival_metabric$THR.clusters_ET9model_Merged <- droplevels(survival_metabric$THR.clusters_ET9model_Merged)
+
+survival_metabric$THR.clusters_CCPmodel_Merged <- as.factor(survival_metabric$THR.clusters_CCPmodel_Merged)
+survival_metabric$THR.clusters_CCPmodel_Merged <- droplevels(survival_metabric$THR.clusters_CCPmodel_Merged)
 
 cluster_colors <- as.vector(ann_colors$THR.clusters_i20model_Merged) # same order for the others
 
@@ -887,4 +1123,128 @@ ggsurvplot(Fit_metabric_RFS_THR70i20model,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, title = 'THR56 clusters and RFS: THR56 + THR70-derived i20')
+dev.off()
+
+################################################################
+## Survival curves: ET60
+################################################################
+
+# OS
+Fit_metabric_os_ET60model <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_ET60model_Merged, data = survival_metabric)
+
+# RFS
+Fit_metabric_RFS_ET60model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_ET60model_Merged, data = survival_metabric)
+
+pdf("./figures/logreg/THR56_clusters/metabric_os_5clusters_ET60Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_os_ET60model,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_ET60model_Merged),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR56 clusters and OS: THR56 + ET60')
+dev.off()
+
+## RFS: 
+pdf("./figures/logreg/THR56_clusters/metabric_rfs_5clusters_ET60Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_RFS_ET60model,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_ET60model_Merged),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR56 clusters and RFS: THR56 + ET60')
+dev.off()
+
+
+################################################################
+## Survival curves: ET9
+################################################################
+
+# OS
+Fit_metabric_os_ET9model <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_ET9model_Merged, data = survival_metabric)
+
+# RFS
+Fit_metabric_RFS_ET9model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_ET9model_Merged, data = survival_metabric)
+
+pdf("./figures/logreg/THR56_clusters/metabric_os_5clusters_ET9Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_os_ET9model,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_ET9model_Merged),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR56 clusters and OS: THR56 + ET9')
+dev.off()
+
+## RFS: 
+pdf("./figures/logreg/THR56_clusters/metabric_rfs_5clusters_ET9Merged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_RFS_ET9model,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_ET9model_Merged),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR56 clusters and RFS: THR56 + ET9')
+dev.off()
+
+################################################################
+## Survival curves: CCP
+################################################################
+
+# OS
+Fit_metabric_os_CCPmodel <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_CCPmodel_Merged, data = survival_metabric)
+
+# RFS
+Fit_metabric_RFS_CCPmodel <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_CCPmodel_Merged, data = survival_metabric)
+
+pdf("./figures/logreg/THR56_clusters/metabric_os_5clusters_CCPMerged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_os_CCPmodel,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_CCPmodel_Merged),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR56 clusters and OS: THR56 + CCP')
+dev.off()
+
+## RFS: 
+pdf("./figures/logreg/THR56_clusters/metabric_rfs_5clusters_CCPMerged.pdf", width = 10, height = 8, onefile = F)
+ggsurvplot(Fit_metabric_RFS_CCPmodel,
+           risk.table = FALSE,
+           pval = TRUE,
+           #palette = cluster_colors,
+           #xlim = c(0,120),
+           legend.labs = levels(survival_metabric$THR.clusters_CCPmodel_Merged),
+           legend.title	= 'THR clusters',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, title = 'THR56 clusters and RFS: THR56 + CCP')
 dev.off()
