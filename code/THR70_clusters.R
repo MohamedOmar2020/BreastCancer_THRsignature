@@ -364,5 +364,115 @@ upset(upset_data,
       )
 dev.off()
 
+######################################################################
+# pie chart
+
+library(ggplot2)
+library(dplyr)
+library(purrr)
+library(gridExtra)
+library(ggrepel)
+library(plotly)
+
+df <- data.frame(
+  'PAM50 groups' = survival_metabric2$Pam50...Claudin.low.subtype,
+  'THR groups' = survival_metabric2$`THR clusters`,
+  'sample_id' = rownames(survival_metabric2)
+)
 
 
+
+df$PAM50.groups <- as.factor(df$PAM50.groups)
+levels(df$PAM50.groups) <- c('Basal-like', 'Claudin-low', 'HER2-enriched', 'Luminal A', 'Luminal B')
+df$THR.groups <- factor(df$THR.groups, levels = c("E1", "E2", "E3", "PQNBC"))
+
+  
+# Create a function to generate pie chart for each cluster
+create_pie_chart <- function(cluster) {
+  # Filter the data for the cluster
+  data <- df %>%
+    filter(THR.groups == cluster) %>%
+    group_by(PAM50.groups) %>%
+    summarise(n = n()) %>%
+    mutate(percentage = n / sum(n), cumulative_percentage = cumsum(percentage) - percentage / 2)
+  
+  # Create the pie chart
+  p <- ggplot(data, aes(x = "", y = percentage, fill = PAM50.groups)) +
+    geom_bar(stat = "identity", width = 1) +
+    coord_polar("y", start = 0) +
+    theme_void() +
+    theme(plot.title = element_text(size = 25, hjust = 0.5, face = 'bold'),
+          plot.margin = margin(t = 0.1, r = 0, b = -0.5, l = 0, unit = "cm"),
+          legend.text = element_text(size = 12, hjust = 0.5, face = 'bold'),
+          legend.title = element_text(size = 16, hjust = 0.5, face = 'bold'),
+          legend.key.size = unit(1, units = 'cm')) + # adjust b here
+  labs(title = cluster, x = NULL, y = NULL)
+    #geom_text(aes(y = cumulative_percentage, label = scales::percent(percentage)), color = "black", size = 3)
+    #geom_label_repel(aes(label = scales::percent(percentage)), size=3, show.legend = F)
+  return(p)
+  
+}
+
+# Get the list of clusters
+clusters <- c("E1", "E2", "E3", "PQNBC")
+
+# Create a pie chart for each cluster
+pie_charts <- lapply(clusters, create_pie_chart)
+
+# Combine the pie charts and add the legend
+combined_plot <- wrap_plots(pie_charts, nrow = 2, ncol = 2, 
+                            guides = 'collect',
+                            heights = c(1, 1)) 
+
+# Save the combined plot
+ggsave("./figures/logreg/THR70_clusters/THR_PAM50_composition.png", 
+       plot = combined_plot, 
+       width = 3000/300, height = 3000/300, dpi = 300)
+
+
+
+
+
+# 
+# # Create a function to generate pie chart for each cluster
+# create_pie_chart <- function(cluster, showlegend = FALSE) {
+#   # Filter the data for the cluster
+#   data <- df %>%
+#     filter(THR.groups == cluster) %>%
+#     group_by(PAM50.groups) %>%
+#     summarise(n = n()) %>%
+#     mutate(percentage = n / sum(n), cumulative_percentage = cumsum(percentage) - percentage / 2)
+#   
+#   colors <- c('rgb(211,94,96)', 'rgb(128,133,133)', 'rgb(144,103,167)', 'rgb(171,104,87)', 'rgb(114,147,203)')
+#   
+#   fig <- plot_ly(data, labels = ~PAM50.groups, values = ~percentage, type = 'pie',
+#                  textposition = 'inside',
+#                  textinfo = 'label+percent',
+#                  insidetextfont = list(color = '#FFFFFF'),
+#                  #hoverinfo = 'text',
+#                  #text = ~paste('$', percentage, ' billions'),
+#                  marker = list(colors = colors,
+#                                line = list(color = '#FFFFFF', width = 1)),
+#                  showlegend = showlegend) %>%
+#     config(staticPlot = TRUE) %>% layout(title = cluster,
+#            xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+#            yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+#   
+#   return(fig)
+# }
+# 
+# # Get the list of clusters
+# clusters <- c("E1", "E2", "E3", "PQNBC")
+# 
+# # Create a pie chart for each cluster, and show legend only for the first one
+# pie_charts <- lapply(clusters, function(cluster) {
+#   create_pie_chart(cluster, showlegend = (cluster == clusters[1]))
+# })
+# 
+# # Combine the pie charts into one figure using subplot
+# combined_plot <- subplot(pie_charts, nrows = 2, margin = 0.05)
+# 
+# 
+# save_image(combined_plot, "./figures/logreg/THR70_clusters/THR_PAM50_composition.png")
+# 
+# 
