@@ -312,6 +312,103 @@ Pheno_metabric2 <- Pheno_metabric2 %>%
   mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i30model = as.factor(THR_clusters_i30model)) %>%
   mutate(THR.clusters_i30model_Merged = coalesce(THR_clusters_i30model,`THR clusters`))
 
+#######################################################################
+# get the most differentially expressed genes between Pi-negative (T1a) long and short survivors
+#######################################################################
+
+# get the Pi-negative
+PiNeg_pheno <- Pheno_metabric2[Pheno_metabric2$THR.clusters_i30model_Merged == 'T1a', ]
+rownames(PiNeg_pheno) <- PiNeg_pheno$Sample.ID
+PiNeg_expr <- Expr_metabric_refAll[, rownames(PiNeg_pheno)]
+
+all(rownames(PiNeg_pheno) == colnames(PiNeg_expr))
+
+#############
+## divide based on survival (RFS)
+summary(PiNeg_pheno$Relapse.Free.Status..Months.)
+
+summary(PiNeg_pheno$Relapse.Free.Status..Months. >= 50)
+
+PiNeg_pheno$rfs_binary <- ifelse(PiNeg_pheno$Relapse.Free.Status..Months. >= 50, 'longSurv', 'shortSurv')
+table(PiNeg_pheno$rfs_binary)
+
+#################
+# differential expression 
+design <- model.matrix( ~ PiNeg_pheno$rfs_binary)
+colnames(design)[2] <- "longVSshortSurvival"
+
+fit_PiNeg <- lmFit(PiNeg_expr, design)
+
+fitted.ebayes_PiNeg <- eBayes(fit_PiNeg)
+
+PiNeg_top20 <- topTable(fitted.ebayes_PiNeg, number = 20)
+PiNeg_top20$gene <- rownames(PiNeg_top20)
+
+library("writexl")
+write_xlsx(PiNeg_top20,"./figures/logreg/THR56_clusters/PiNeg_longVSshortSurv_DE.xlsx")
+
+#######################################################################
+# Make c50 (i30+PiNeg top 20) and use it to split PQNBC
+#######################################################################
+c50 <- c(feat_back, PiNeg_top20$gene)
+
+c50model <- glm(as.formula((paste("RFS_T1 ~", paste(c50, collapse = "+")))), data = Data_T1, family = "binomial")
+summary(c50model)
+
+################
+##  Make predictions
+
+# prob
+THR56_T1_prob_c50model <- c50model %>% predict(Data_T1 , type = "response")
+
+# Threshold
+thr_THR56_T1_c50model <- coords(roc(RFS_T1, THR56_T1_prob_c50model, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+
+### ROC Curve
+ROC_THR56_T1_c50model <- roc(RFS_T1, THR56_T1_prob_c50model, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROC_THR56_T1_c50model
+
+### Get predictions based on best threshold from ROC curve
+predClasses_THR56_T1_c50model <- ifelse(THR56_T1_prob_c50model >= thr_THR56_T1_c50model$threshold, "longSurv", "shortSurv")
+table(predClasses_THR56_T1_c50model)
+predClasses_THR56_T1_c50model <- factor(predClasses_THR56_T1_c50model, levels = c('longSurv', 'shortSurv'))
+
+
+############################################
+T1_pheno2 <- cbind(T1_pheno[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype")], 
+                   THR56_T1_prob_i30model, predClasses_THR56_T1_i30model,
+                   THR56_T1_prob_c50model, predClasses_THR56_T1_c50model
+)
+
+##########################################################################################
+## recombine T1 with the rest 
+T1_pheno2$THR_clusters_i30model <- as.factor(T1_pheno2$predClasses_THR56_T1_i30model)
+levels(T1_pheno2$THR_clusters_i30model) <- c('Pi-', 'Pi+')
+
+T1_pheno2$THR_clusters_c50model <- as.factor(T1_pheno2$predClasses_THR56_T1_c50model)
+levels(T1_pheno2$THR_clusters_c50model) <- c('Pi-', 'Pi+')
+
+
+T1 <- data.frame(THR_clusters_i30model = T1_pheno2$THR_clusters_i30model,
+                 THR_clusters_c50model = T1_pheno2$THR_clusters_c50model,
+                 `Sample.ID` = rownames(T1_pheno))
+
+rownames(T1) <- rownames(T1_pheno)
+
+
+# merge
+Pheno_metabric$`THR clusters`[Pheno_metabric$`THR clusters` == 'T1'] <- NA
+
+
+Pheno_metabric2 <- merge(x = T1, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
+
+Pheno_metabric2 <- Pheno_metabric2 %>% 
+  mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i30model = as.factor(THR_clusters_i30model), THR_clusters_c50model = as.factor(THR_clusters_c50model)) %>%
+  mutate(THR.clusters_i30model_Merged = coalesce(THR_clusters_i30model,`THR clusters`)) %>%
+  mutate(THR.clusters_c50model_Merged = coalesce(THR_clusters_c50model,`THR clusters`))
+
+
+
 ###########################################################################################
 ##########################################################################################
 ## survival analysis
@@ -321,17 +418,25 @@ survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Sur
                                          "Relapse.Free.Status", "Relapse.Free.Status..Months.", 
                                          "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
                                          "X3.Gene.classifier.subtype", 
-                                         "THR.clusters_i30model_Merged"
+                                         "THR.clusters_i30model_Merged",
+                                         "THR.clusters_c50model_Merged"
 )] 
 
+# order the THR levels: i30
 survival_metabric$THR.clusters_i30model_Merged <- as.factor(survival_metabric$THR.clusters_i30model_Merged)
 survival_metabric$THR.clusters_i30model_Merged <- droplevels(survival_metabric$THR.clusters_i30model_Merged)
 table(survival_metabric$THR.clusters_i30model_Merged)
-survival_metabric$THR.clusters_i30model_Merged <- factor(survival_metabric$THR.clusters_i30model_Merged, levels = c('E1', 'E2', 'E3', 'T1b', 'T1a'))
+survival_metabric$THR.clusters_i30model_Merged <- factor(survival_metabric$THR.clusters_i30model_Merged, levels = c('E1', 'E2', 'E3', 'Pi-', 'Pi+'))
 
-levels(survival_metabric$THR.clusters_i30model_Merged) <- c('E1', 'E2', 'E3', 'Pi+', 'Pi-')
+# same for c50
+survival_metabric$THR.clusters_c50model_Merged <- as.factor(survival_metabric$THR.clusters_c50model_Merged)
+survival_metabric$THR.clusters_c50model_Merged <- droplevels(survival_metabric$THR.clusters_c50model_Merged)
+table(survival_metabric$THR.clusters_c50model_Merged)
+survival_metabric$THR.clusters_c50model_Merged <- factor(survival_metabric$THR.clusters_c50model_Merged, levels = c('E1', 'E2', 'E3', 'Pi-', 'Pi+'))
 
-#########################
+#########################################
+# Pull HER2+ samples from the E clusters
+########################################
 # Create a copy of the dataframe to keep the original data intact
 survival_metabric_HER2asCluster <- survival_metabric
 
@@ -346,18 +451,24 @@ survival_metabric_HER2asCluster$clusters_modified[survival_metabric_HER2asCluste
 survival_metabric_HER2asCluster$clusters_modified <- as.factor(survival_metabric_HER2asCluster$clusters_modified)
 
 table(survival_metabric$THR.clusters_i30model_Merged)
+table(survival_metabric$THR.clusters_c50model_Merged)
 table(survival_metabric_HER2asCluster$clusters_modified)
 
+
+###########################################
+
 ################################################################
-## Survival curves: THR50 i20
+## Survival curves
 ################################################################
 # RFS
 Fit_metabric_RFS_i30model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_i30model_Merged, data = survival_metabric)
+Fit_metabric_RFS_c50model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_c50model_Merged, data = survival_metabric)
 Fit_metabric_RFS_i30model_Her2asCluster <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ clusters_modified, data = survival_metabric_HER2asCluster)
 
 
-##############
-## plot RFS 
+############################
+## plot RFS: THR56 + i30 
+############################
 tiff("./figures/logreg/THR56_clusters/metabric_rfs_i30.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_RFS_i30model,
            risk.table = FALSE,
@@ -387,7 +498,41 @@ ggsurvplot(Fit_metabric_RFS_i30model,
              colour = guide_legend(ncol = 2))
 dev.off()
 
+############################
+## plot RFS: THR56 + c50 
+############################
+tiff("./figures/logreg/THR56_clusters/metabric_rfs_c50.tiff", width = 2000, height = 2000, res = 350)
+ggsurvplot(Fit_metabric_RFS_c50model,
+           risk.table = FALSE,
+           pval = FALSE,
+           #palette = cluster_colors,
+           xlim = c(0,240),
+           legend.labs = levels(survival_metabric$THR.clusters_c50model_Merged),
+           legend.title	= '',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR56 clusters and RFS: THR56 + THR50-derived i20'
+) + guides(
+  colour = guide_legend(ncol = 2))
+dev.off()
+
+#######################################
 # with HER2 pulled out from E clusters
+#######################################
 tiff("./figures/logreg/THR56_clusters/metabric_rfs_i30_Her2Out.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_RFS_i30model_Her2asCluster,
            risk.table = FALSE,
