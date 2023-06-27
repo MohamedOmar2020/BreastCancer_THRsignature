@@ -241,7 +241,7 @@ THR50_i200[THR50_i200 == 'HLA-DOB'] <- 'HLA_DOB'
 colnames(Data_T1)[colnames(Data_T1) == 'HLA-DOB'] <- 'HLA_DOB'
 
 ################################################################
-# THR50 i20 model
+# THR50 i200 model
 ################################################################
 i200model <- glm(as.formula((paste("RFS_T1 ~", paste(THR50_i200, collapse = "+")))), data = Data_T1, family = "binomial")
 summary(i200model)
@@ -250,13 +250,13 @@ summary(i200model)
 
 ### 
 library(glmtoolbox)
-stepCriterion(i200model, direction="forward", criterion="p-value", test="lr")
-stepCriterion(i200model, direction="backward", criterion="p-value", test="score")
+#stepCriterion(i200model, direction="forward", criterion="p-value", test="lr")
+#stepCriterion(i200model, direction="backward", criterion="p-value", test="score")
 
 
-feat_forward <- c('ENC1', 'NCBP2', 'DOLK', 'TRPM5', 'UBE2NL', 'CDH6', 'CAPN14', 'KIR3DL3', 'UTP20', 'MAP7D2', 'FOXN2', 'WDFY1', 'MBOAT7', 'SMAD7', 'ZNF501', 'AA830182', 'LPPR2', 'KLRD1', 'BX111540', 'VAMP4')
-i200model_forward <- glm(as.formula((paste("RFS_T1 ~", paste(feat_forward, collapse = "+")))), data = Data_T1, family = "binomial")
-summary(i200model_forward)
+#feat_forward <- c('ENC1', 'NCBP2', 'DOLK', 'TRPM5', 'UBE2NL', 'CDH6', 'CAPN14', 'KIR3DL3', 'UTP20', 'MAP7D2', 'FOXN2', 'WDFY1', 'MBOAT7', 'SMAD7', 'ZNF501', 'AA830182', 'LPPR2', 'KLRD1', 'BX111540', 'VAMP4')
+#i200model_forward <- glm(as.formula((paste("RFS_T1 ~", paste(feat_forward, collapse = "+")))), data = Data_T1, family = "binomial")
+#summary(i200model_forward)
 
 feat_back <- c('KIR3DL3', 'HIST1H2BF', 'KLRD1', 'ENC1', 'SPINT1', 'ZNF501', 'NCBP2', 
                'UBE2NL', 'CDH6', 'BX095841', 'AK095067', 'DOLK', 'GZMA', 'MAP7D2', 'BX111540', 
@@ -264,39 +264,39 @@ feat_back <- c('KIR3DL3', 'HIST1H2BF', 'KLRD1', 'ENC1', 'SPINT1', 'ZNF501', 'NCB
                'EOMES', 'PPP1R16B', 'PITPNM2', 'CD27', 'EHD3', 'WDFY1', 'AA830182' 
                )
 
-i200model_back <- glm(as.formula((paste("RFS_T1 ~", paste(feat_back, collapse = "+")))), data = Data_T1, family = "binomial")
-summary(i200model_back)
+i30model <- glm(as.formula((paste("RFS_T1 ~", paste(feat_back, collapse = "+")))), data = Data_T1, family = "binomial")
+summary(i30model)
 
 ############################################################################
 ##  Make predictions
 
 # prob
-THR56_T1_prob_i20model <- i200model %>% predict(Data_T1 , type = "response")
+THR56_T1_prob_i30model <- i30model %>% predict(Data_T1 , type = "response")
 
 # Threshold
-thr_THR56_T1_i20model <- coords(roc(RFS_T1, THR56_T1_prob_i20model, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
+thr_THR56_T1_i30model <- coords(roc(RFS_T1, THR56_T1_prob_i30model, levels = c('longSurv', 'shortSurv'), direction = "<"), "best")["threshold"]
 
 ### ROC Curve
-ROC_THR56_T1_i20model <- roc(RFS_T1, THR56_T1_prob_i20model, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
-ROC_THR56_T1_i20model
+ROC_THR56_T1_i30model <- roc(RFS_T1, THR56_T1_prob_i30model, plot = F, print.auc=TRUE, print.auc.col="black", ci = T, levels = c('longSurv', 'shortSurv'), direction = "<", col="blue", lwd=2, grid=TRUE)
+ROC_THR56_T1_i30model
 
 ### Get predictions based on best threshold from ROC curve
-predClasses_THR56_T1_i20model <- ifelse(THR56_T1_prob_i20model >= thr_THR56_T1_i20model$threshold, "longSurv", "shortSurv")
-table(predClasses_THR56_T1_i20model)
-predClasses_THR56_T1_i20model <- factor(predClasses_THR56_T1_i20model, levels = c('longSurv', 'shortSurv'))
+predClasses_THR56_T1_i30model <- ifelse(THR56_T1_prob_i30model >= thr_THR56_T1_i30model$threshold, "longSurv", "shortSurv")
+table(predClasses_THR56_T1_i30model)
+predClasses_THR56_T1_i30model <- factor(predClasses_THR56_T1_i30model, levels = c('longSurv', 'shortSurv'))
 
 
 ############################################
 T1_pheno2 <- cbind(T1_pheno[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype")], 
-                   THR56_T1_prob_i20model, predClasses_THR56_T1_i20model
+                   THR56_T1_prob_i30model, predClasses_THR56_T1_i30model
 )
 
 ##########################################################################################
 ## recombine T1 with the rest 
-T1_pheno2$THR_clusters_i20model <- as.factor(T1_pheno2$predClasses_THR56_T1_i20model)
-levels(T1_pheno2$THR_clusters_i20model) <- c('T1a', 'T1b')
+T1_pheno2$THR_clusters_i30model <- as.factor(T1_pheno2$predClasses_THR56_T1_i30model)
+levels(T1_pheno2$THR_clusters_i30model) <- c('T1a', 'T1b')
 
-T1 <- data.frame(THR_clusters_i20model = T1_pheno2$THR_clusters_i20model,
+T1 <- data.frame(THR_clusters_i30model = T1_pheno2$THR_clusters_i30model,
                  `Sample.ID` = rownames(T1_pheno))
 
 rownames(T1) <- rownames(T1_pheno)
@@ -309,8 +309,8 @@ Pheno_metabric$`THR clusters`[Pheno_metabric$`THR clusters` == 'T1'] <- NA
 Pheno_metabric2 <- merge(x = T1, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
 
 Pheno_metabric2 <- Pheno_metabric2 %>% 
-  mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i20model = as.factor(THR_clusters_i20model)) %>%
-  mutate(THR.clusters_i20model_Merged = coalesce(THR_clusters_i20model,`THR clusters`))
+  mutate(`THR clusters` = as.factor(`THR clusters`), THR_clusters_i30model = as.factor(THR_clusters_i30model)) %>%
+  mutate(THR.clusters_i30model_Merged = coalesce(THR_clusters_i30model,`THR clusters`))
 
 ###########################################################################################
 ##########################################################################################
@@ -321,32 +321,50 @@ survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Sur
                                          "Relapse.Free.Status", "Relapse.Free.Status..Months.", 
                                          "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
                                          "X3.Gene.classifier.subtype", 
-                                         "THR.clusters_i20model_Merged"
+                                         "THR.clusters_i30model_Merged"
 )] 
 
-survival_metabric$THR.clusters_i20model_Merged <- as.factor(survival_metabric$THR.clusters_i20model_Merged)
-survival_metabric$THR.clusters_i20model_Merged <- droplevels(survival_metabric$THR.clusters_i20model_Merged)
-table(survival_metabric$THR.clusters_i20model_Merged)
-survival_metabric$THR.clusters_i20model_Merged <- factor(survival_metabric$THR.clusters_i20model_Merged, levels = c('E1', 'E2', 'E3', 'T1b', 'T1a'))
+survival_metabric$THR.clusters_i30model_Merged <- as.factor(survival_metabric$THR.clusters_i30model_Merged)
+survival_metabric$THR.clusters_i30model_Merged <- droplevels(survival_metabric$THR.clusters_i30model_Merged)
+table(survival_metabric$THR.clusters_i30model_Merged)
+survival_metabric$THR.clusters_i30model_Merged <- factor(survival_metabric$THR.clusters_i30model_Merged, levels = c('E1', 'E2', 'E3', 'T1b', 'T1a'))
 
-levels(survival_metabric$THR.clusters_i20model_Merged) <- c('E1', 'E2', 'E3', 'Pi+', 'Pi-')
+levels(survival_metabric$THR.clusters_i30model_Merged) <- c('E1', 'E2', 'E3', 'Pi+', 'Pi-')
+
+#########################
+# Create a copy of the dataframe to keep the original data intact
+survival_metabric_HER2asCluster <- survival_metabric
+
+# Convert the columns to character for string matching
+survival_metabric_HER2asCluster$clusters_modified <- as.character(survival_metabric_HER2asCluster$THR.clusters_i30model_Merged)
+survival_metabric_HER2asCluster$Pam50_subtype <- as.character(survival_metabric_HER2asCluster$Pam50...Claudin.low.subtype)
+
+# Reassign HER2 samples to a new level
+survival_metabric_HER2asCluster$clusters_modified[survival_metabric_HER2asCluster$Pam50_subtype == "Her2" & survival_metabric_HER2asCluster$clusters_modified %in% c("E1", "E2", "E3")] <- "HER2"
+
+# Convert the modified cluster back to factor
+survival_metabric_HER2asCluster$clusters_modified <- as.factor(survival_metabric_HER2asCluster$clusters_modified)
+
+table(survival_metabric$THR.clusters_i30model_Merged)
+table(survival_metabric_HER2asCluster$clusters_modified)
 
 ################################################################
 ## Survival curves: THR50 i20
 ################################################################
 # RFS
-Fit_metabric_RFS_i20model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_i20model_Merged, data = survival_metabric)
+Fit_metabric_RFS_i30model <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ THR.clusters_i30model_Merged, data = survival_metabric)
+Fit_metabric_RFS_i30model_Her2asCluster <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ clusters_modified, data = survival_metabric_HER2asCluster)
 
 
 ##############
 ## plot RFS 
-tiff("./figures/logreg/THR56_clusters/metabric_rfs_i200All.tiff", width = 2000, height = 2000, res = 350)
-ggsurvplot(Fit_metabric_RFS_i20model,
+tiff("./figures/logreg/THR56_clusters/metabric_rfs_i30.tiff", width = 2000, height = 2000, res = 350)
+ggsurvplot(Fit_metabric_RFS_i30model,
            risk.table = FALSE,
            pval = FALSE,
            #palette = cluster_colors,
            xlim = c(0,240),
-           legend.labs = levels(survival_metabric$THR.clusters_i20model_Merged),
+           legend.labs = levels(survival_metabric$THR.clusters_i30model_Merged),
            legend.title	= '',
            pval.size = 12,
            #break.x.by = 20,
@@ -369,3 +387,32 @@ ggsurvplot(Fit_metabric_RFS_i20model,
              colour = guide_legend(ncol = 2))
 dev.off()
 
+# with HER2 pulled out from E clusters
+tiff("./figures/logreg/THR56_clusters/metabric_rfs_i30_Her2Out.tiff", width = 2000, height = 2000, res = 350)
+ggsurvplot(Fit_metabric_RFS_i30model_Her2asCluster,
+           risk.table = FALSE,
+           pval = FALSE,
+           #palette = cluster_colors,
+           xlim = c(0,240),
+           legend.labs = levels(survival_metabric_HER2asCluster$clusters_modified),
+           legend.title	= '',
+           pval.size = 12,
+           #break.x.by = 20,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR56 clusters and RFS: THR56 + THR50-derived i20'
+) + guides(
+  colour = guide_legend(ncol = 2))
+dev.off()
