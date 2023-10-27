@@ -37,44 +37,47 @@ THR50 <- gsub('-', '', THR50)
 # Load the  expression and pheno data
 load('./objs/forKTSP.rda')
 
-### combine in 1 dataset: Training
+##############################################
+# fix gene names
+##############################################
+# Fix in TCGA : ALL GOOD
+setdiff(THR50, rownames(Expr_tcga_refAll))
+grep('^FAM63A', rownames(Expr_tcga_refAll), value = TRUE) # MINDY1
+grep('^FAM176A', rownames(Expr_tcga_refAll), value = TRUE) # EVA1A
+grep('^LEPREL1', rownames(Expr_tcga_refAll), value = TRUE) # P3H2
+grep('^DULLARD', rownames(Expr_tcga_refAll), value = TRUE) # SDHAF3
+
+rownames(Expr_tcga_refAll)[rownames(Expr_tcga_refAll) == 'ACN9'] <- 'SDHAF3'
+rownames(Expr_tcga_refAll)[rownames(Expr_tcga_refAll) == 'FAM176A'] <- 'EVA1A'
+rownames(Expr_tcga_refAll)[rownames(Expr_tcga_refAll) == 'LEPREL1'] <- 'P3H2'
+rownames(Expr_tcga_refAll)[rownames(Expr_tcga_refAll) == 'FAM63A'] <- 'MINDY1'
+
+###############
+# Fix in metabric: 4 missing
+setdiff(THR50, rownames(Expr_metabric_refAll))
+grep('^EXOC3L3', rownames(Expr_metabric_refAll), value = TRUE) # MINDY1
+grep('^FAM176A', rownames(Expr_metabric_refAll), value = TRUE) # EVA1A
+grep('^LEPREL1', rownames(Expr_metabric_refAll), value = TRUE) # P3H2
+grep('^RSNL2', rownames(Expr_metabric_refAll), value = TRUE) # SDHAF3
+
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'FAM63A'] <- 'MINDY1'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'FAM176A'] <- 'EVA1A'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'ACN9'] <- 'SDHAF3'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'LEPREL1'] <- 'P3H2'
+
+##############
+# filter the signatures to include only the genes present in the expr matrices
+THR50_fil <- THR50[THR50 %in% rownames(Expr_tcga_refAll) & THR50 %in% rownames(Expr_metabric_refAll)]
+
+setdiff(THR50, THR50_fil)
+
+##############################################
+### combine in 1 dataset
+##############################################
 Data_metabric <- as.data.frame(cbind(t(Expr_metabric_refAll), group_metabric))
 Data_metabric$group_metabric <- as.factor(Data_metabric$group_metabric)
 levels(Data_metabric$group_metabric) <- c('0', '1')
 colnames(Data_metabric)[colnames(Data_metabric) %in% c('group_metabric')] <- c('os')
-
-####
-# metabric summary
-#sumtable(Pheno_metabric,
-#         file='metabric_summary',
-#         out = 'browser',
-#         title='METABRIC Summary Statistics',
-#         simple.kable=FALSE,
-#         opts=list())
-
-
-####################
-### tcga
-Data_tcga <- as.data.frame(cbind(t(Expr_tcga_refAll), group_tcga))
-Data_tcga$group_tcga <- as.factor(Data_tcga$group_tcga)
-levels(Data_tcga$group_tcga) <- c('0', '1')
-colnames(Data_tcga)[colnames(Data_tcga) %in% c('group_tcga')] <- c('os')
-
-###########################################################################
-### TRAINING using logistic regression
-###########################################################################
-
-rownames(Expr_metabric_refAll)[grep('^ZNF652', rownames(Expr_metabric_refAll))]
-rownames(Expr_tcga_refAll)[grep('^ZNF652', rownames(Expr_tcga_refAll))]
-
-
-# filter the THR signatures to include only the genes present in the expr matrices
-THR50_fil <- THR50[THR50 %in% rownames(Expr_metabric_refAll) & THR50 %in% rownames(Expr_tcga_refAll)]
-
-
-THR50_fil_tcga <- THR50[THR50 %in% rownames(Expr_metabric_refAll)]
-
-setdiff(THR50, THR50_fil)
 
 #############################################################################################################
 ##############################################################################################################
@@ -82,6 +85,7 @@ setdiff(THR50, THR50_fil)
 THR50_model <- glm(as.formula((paste("os ~", paste(THR50_fil, collapse = "+")))), data = Data_metabric, family = "binomial")
 summary(THR50_model)
 
+save(THR50_model, file = 'objs/THR50_model_logreg.rda')
 
 ###########################################################################
 ############################################################################
@@ -112,66 +116,22 @@ ConfusionTrain_THR50
 MCC_Train_THR50 <- mltools::mcc(pred = Train_predClasses_THR50, actuals = group_metabric)
 MCC_Train_THR50
 
-#########################################################################
-#########################################################################
-### Testing
-
-tcga_prob_THR50 <-  THR50_model %>% predict(Data_tcga , type = "response")
-
-
-### ROC
-ROC_tcga_THR50 <- roc(group_tcga, tcga_prob_THR50, plot = F, print.thres=thr_THR50$threshold, print.auc=TRUE, print.auc.col="black", ci = T, levels = c("0", "1"), direction = "<", col="blue", lwd=2, grid=TRUE)
-ROC_tcga_THR50
-
-############################
-### Get predictions based on best threshold from ROC curve
-tcga_predClasses_THR50 <- ifelse(tcga_prob_THR50 >= thr_THR50$threshold, "1", "0")
-table(tcga_predClasses_THR50)
-tcga_predClasses_THR50 <- factor(tcga_predClasses_THR50, levels = c('0', '1'))
-
-##################################
-### CI  in testing 1
-Confusion_tcga_THR50 <- confusionMatrix(tcga_predClasses_THR50, group_tcga, positive = "1", mode = "everything")
-Confusion_tcga_THR50
-
-
-################
-## MCC
-MCC_tcga_THR50 <- mltools::mcc(pred = tcga_predClasses_THR50, actuals = group_tcga)
-MCC_tcga_THR50
-
 
 ##########################
 ## Keep only the relevant information (Metastasis Event and Time)
 Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype")], 
                                   Train_prob_THR50, Train_predClasses_THR50)
 
-Phenotype_tcga <- cbind(Pheno_tcga[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Progression.Free.Status", "Progress.Free.Survival..Months.")], 
-                              tcga_prob_THR50, tcga_predClasses_THR50)
-
-#Expr_metabric_refAll <- Expr_metabric_refAll[ClassifierGenes, ]
-#Expr_tcga_refAll <- Expr_tcga_refAll[ClassifierGenes, ]
-
-
 # create a merged pdata and Z-scores object
 CoxData_metabric <- data.frame(Phenotype_metabric)
-CoxData_tcga <- data.frame(Phenotype_tcga)
 
 # divide the probabilities into quartiles
 CoxData_metabric <- CoxData_metabric %>%
   mutate(metabric_prob_THR50_quartiles = ntile(Train_prob_THR50, 4), 
-         metabric_prob_THR50_quintiles = ntile(Train_prob_THR50, 5))
+         metabric_prob_THR50_quintiles = ntile(Train_prob_THR50, 5),
+         metabric_prob_THR50_tertiles = ntile(Train_prob_THR50, 3)
+         )
 
-CoxData_tcga <- CoxData_tcga %>%
-  mutate(tcga_prob_THR50_quartiles = ntile(tcga_prob_THR50, 4), 
-         tcga_prob_THR50_quintiles = ntile(tcga_prob_THR50, 5))
-
-#CutPoint <- surv_cutpoint(data = CoxData, time = "Time", event = "Event", variables = "ResidualDisease_Score")
-#CutPoint
-
-#SurvData <- surv_categorize(CutPoint)
-
-#SurvData$ResidualDisease_Score <- factor(SurvData$ResidualDisease_Score, levels = c("low", "high"))
 
 
 ########################################################################  
@@ -222,6 +182,9 @@ Fit_sig_metabric_os_THR50_quartiles <- survfit(Surv(Overall.Survival..Months., O
 ## by quintiles
 Fit_sig_metabric_os_THR50_quintiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_quintiles, data = CoxData_metabric)
 
+## by tertiles
+Fit_sig_metabric_os_THR50_tertiles <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_tertiles, data = CoxData_metabric)
+
 #############
 # RFS
 ## metabric all genes
@@ -232,6 +195,9 @@ Fit_sig_metabric_RFS_THR50_quartiles <- survfit(Surv(Relapse.Free.Status..Months
 
 ## by quintiles
 Fit_sig_metabric_RFS_THR50_quintiles <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quintiles, data = CoxData_metabric)
+
+## by tertiles
+Fit_sig_metabric_RFS_THR50_tertiles <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_tertiles, data = CoxData_metabric)
 
 #################################
 ## by clinical groups
@@ -397,9 +363,18 @@ Fit_sig_metabric_rfs_THR50_Q1vsQ5_X3 <- survfit(Surv(Relapse.Free.Status..Months
 ############################################################################
 # plot OS
 
-tiff("./figures/logreg/oct10/THR50_1_metabric_os_allpairs.tiff", width = 2000, height = 2000, res = 350)
+# COXPH
+Fit_sig_metabric_os_THR50_coxph_prob <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_prob_THR50, data = CoxData_metabric)
+summary(Fit_sig_metabric_os_THR50_coxph_prob)
+
+# by class
+
+Fit_sig_metabric_os_THR50_coxph_class <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50, data = CoxData_metabric)
+summary(Fit_sig_metabric_os_THR50_coxph_class)
+
+tiff("./figures/THR50/metabric/THR50_metabric_os_allpairs.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR50,
-           risk.table = FALSE,
+           risk.table = TRUE,
            pval = FALSE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
            legend.title = '',
@@ -417,18 +392,18 @@ ggsurvplot(Fit_sig_metabric_os_THR50,
                            axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
                            legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
            ), 
-           risk.table.y.text.col = FALSE,
+           risk.table.y.text.col = TRUE,
            palette = 'jco',
-           risk.table.y.text = FALSE, 
+           risk.table.y.text = TRUE, 
            #title = 'THR 50 and METABRIC OS'
            )
 dev.off()
 
 ########
 # by quartiles
-tiff("./figures/logreg/oct10/THR50_metabric_os_quartiles.tiff", width = 2000, height = 2000, res = 350)
+tiff("./figures/THR50/metabric/THR50_metabric_os_quartiles.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR50_quartiles,
-           risk.table = FALSE,
+           risk.table = TRUE,
            pval = FALSE,
            legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
            ggtheme = theme(axis.line = element_line(colour = "black"),
@@ -444,15 +419,15 @@ ggsurvplot(Fit_sig_metabric_os_THR50_quartiles,
                            legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
            ), 
            palette = 'jco',
-           risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, 
+           risk.table.y.text.col = TRUE,
+           risk.table.y.text = TRUE, 
            #title = 'THR 50_1 (logistic regression) and METABRIC OS: quartiles'
            )
 dev.off()
 
 #############
 # by quintiles
-tiff("./figures/logreg/oct10/THR50_metabric_os_quintiles.tiff", width = 2000, height = 2000, res = 350)
+tiff("./figures/THR50/metabric/THR50_metabric_os_quintiles.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_os_THR50_quintiles,
            risk.table = FALSE,
            pval = FALSE,
@@ -476,11 +451,49 @@ ggsurvplot(Fit_sig_metabric_os_THR50_quintiles,
 )
 dev.off()
 
+#############
+# by tertiles
+tiff("./figures/THR50/metabric/THR50_metabric_os_tertiles.tiff", width = 2000, height = 2000, res = 350)
+ggsurvplot(Fit_sig_metabric_os_THR50_tertiles,
+           risk.table = FALSE,
+           pval = TRUE,
+           pval.size = 8,
+           legend.labs = c('Q1', 'Q2', 'Q3'),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR 50_1 (logistic regression) and METABRIC OS: quartiles'
+)
+dev.off()
+
+#######################################
 ######################################
 # plot RFS
-tiff("./figures/logreg/oct10/THR50_metabric_RFS_allpairs.tiff", width = 2000, height = 2000, res = 350)
+
+# COXPH
+Fit_sig_metabric_RFS_THR50_coxph_prob <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_prob_THR50, data = CoxData_metabric)
+summary(Fit_sig_metabric_RFS_THR50_coxph_prob)
+
+# by class
+
+Fit_sig_metabric_RFS_THR50_coxph_class <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR50, data = CoxData_metabric)
+summary(Fit_sig_metabric_RFS_THR50_coxph_class)
+
+tiff("./figures/THR50/metabric/THR50_metabric_RFS_allpairs.tiff", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_RFS_THR50,
-           risk.table = FALSE,
+           risk.table = TRUE,
            pval = FALSE,
            legend.labs = c('prediction: 0', 'prediction: 1'),
            xlim = c(0,240),
@@ -497,8 +510,8 @@ ggsurvplot(Fit_sig_metabric_RFS_THR50,
                            axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
                            legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
            ), 
-           risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, 
+           risk.table.y.text.col = TRUE,
+           risk.table.y.text = TRUE, 
            palette = 'jco',
            #title = 'THR 50_1 (logistic regression) and METABRIC RFS'
            )
@@ -508,20 +521,35 @@ dev.off()
 ########
 # by quartiles
 
-pdf("./figures/logreg/oct10/THR50_metabric_RFS_quartiles.pdf", width = 8, height = 8, onefile = F)
+pdf("./figures/THR50/metabric/THR50_metabric_RFS_quartiles.pdf", width = 8, height = 8, onefile = F)
 ggsurvplot(Fit_sig_metabric_RFS_THR50_quartiles,
-           risk.table = FALSE,
+           risk.table = TRUE,
            pval = TRUE,
+           pval.size = 12,
            legend.labs = c('Q1', 'Q2', 'Q3', 'Q4'),
-           ggtheme = theme_minimal(),
-           risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, title = 'THR 50_1 (logistic regression) and METABRIC RFS: quartiles')
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = TRUE,
+           risk.table.y.text = TRUE,
+           palette = 'jco',
+           #title = 'THR 50_1 (logistic regression) and METABRIC RFS: quartiles'
+           )
 dev.off()
 
 ########
 # by quintiles
 
-tiff("./figures/logreg/oct10/THR50_metabric_rfs_quintiles.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/THR50/metabric/THR50_metabric_rfs_quintiles.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(Fit_sig_metabric_RFS_THR50_quintiles,
            risk.table = FALSE,
            pval = FALSE,
@@ -534,7 +562,32 @@ ggsurvplot(Fit_sig_metabric_RFS_THR50_quintiles,
 )
 dev.off()
 
-
+#############
+# by tertiles
+tiff("./figures/THR50/metabric/THR50_metabric_rfs_tertiles.tiff", width = 2000, height = 2000, res = 350)
+ggsurvplot(Fit_sig_metabric_RFS_THR50_tertiles,
+           risk.table = FALSE,
+           pval = TRUE,
+           pval.size = 8,
+           legend.labs = c('Q1', 'Q2', 'Q3'),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           palette = 'jco',
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR 50_1 (logistic regression) and METABRIC OS: quartiles'
+)
+dev.off()
 ############################################################################
 ############################################################################
 ### by clinical group
@@ -679,12 +732,22 @@ dev.off()
 
 #############################
 # RFS: quartiles: Q1 vs Q4
+################################
+
+# COXPH
+
+CoxData_metabric_PAM_coxph_Q1Q4 <- CoxData_metabric_PAM_Q1vsQ4_THR50
+CoxData_metabric_PAM_coxph_Q1Q4$metabric_prob_THR50_quartiles <- factor(CoxData_metabric_PAM_coxph_Q1Q4$metabric_prob_THR50_quartiles, levels = c('1', '4'))
+levels(CoxData_metabric_PAM_coxph_Q1Q4$metabric_prob_THR50_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM_coxph_Q1Q4$metabric_prob_THR50_quartiles))
+
+lapply(split(CoxData_metabric_PAM_coxph_Q1Q4, CoxData_metabric_PAM_coxph_Q1Q4$Pam50...Claudin.low.subtype),
+       function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quartiles, data = x)))
 
 tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_PAM50_Q1vsQ4.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_PAM,
            risk.table = FALSE,
            nrow=2, ncol=3,
-           pval = F,
+           pval = T,
            short.panel.labs = T,
            facet.by = "Pam50...Claudin.low.subtype",
            #legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
@@ -713,6 +776,28 @@ ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_PAM,
            #title = 'THR 50_1 and METABRIC RFS by PAM50 subtypes: Q1 vs Q4'
            )
 dev.off()
+
+
+# ggsurvtable(Fit_sig_metabric_rfs_THR50_Q1vsQ4_PAM,
+#             legend.labs = c('Basal: Q1', 'Claudin-low: Q1', 'HER2: Q1', 'LumA: Q1', 'LumB: Q1',
+#                             'Basal: Q4', 'Claudin-low: Q4', 'HER2: Q4', 'LumA: Q4', 'LumB: Q4'),
+#             xlim = c(0,240),
+#             y.text.col = TRUE,
+#             y.text = TRUE,
+#             palette = 'jco',
+#             ) + facet_wrap('Pam50...Claudin.low.subtype')
+
+
+tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_PAM50_Q1vsQ4_table.tiff", width = 3000, height = 2500, res = 350)
+ggsurvplot_facet_table_confint(Fit_sig_metabric_rfs_THR50_Q1vsQ4_PAM, 
+                               CoxData_metabric_PAM_Q1vsQ4_THR50, 
+                               risktable=TRUE, 
+                               conf.int = TRUE,
+                               short.panel.labs = T,
+                               facet.by = 'Pam50...Claudin.low.subtype'
+                               )
+dev.off()
+
 
 #############################
 # RFS: quintiles: Q1 vs Q5
@@ -1030,10 +1115,18 @@ dev.off()
 ###############################################################
 # RFS: quartiles: Q1 vs Q4
 
+# COXPH with 240 months
+CoxData_metabric_Q1vsQ4_THR50_coxph <- CoxData_metabric_Q1vsQ4_THR50
+CoxData_metabric_Q1vsQ4_THR50_coxph$metabric_prob_THR50_quartiles <- factor(CoxData_metabric_Q1vsQ4_THR50_coxph$metabric_prob_THR50_quartiles, levels = c('1', '4'))
+levels(CoxData_metabric_Q1vsQ4_THR50_coxph$metabric_prob_THR50_quartiles) <- paste0('Q', levels(CoxData_metabric_Q1vsQ4_THR50_coxph$metabric_prob_THR50_quartiles))
+
+lapply(split(CoxData_metabric_Q1vsQ4_THR50_coxph, CoxData_metabric_Q1vsQ4_THR50_coxph$X3.Gene.classifier.subtype),
+       function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quartiles, data = x)))
+
 tiff("./figures/logreg/logistic_regression_oct11/metabric/THR50_1/RFS/Q1_vs_Q4/THR50_1_metabric_rfs_X3_Q1vsQ4.tiff", width = 3000, height = 2500, res = 350)
 ggsurvplot(Fit_sig_metabric_rfs_THR50_Q1vsQ4_X3,
            risk.table = FALSE,
-           pval = F,
+           pval = T,
            short.panel.labs = T,
            facet.by = "X3.Gene.classifier.subtype",
            legend.title	= 'Quartiles',
@@ -1107,8 +1200,8 @@ summary(Fit_sig_metabric_os_coxph_THR50)
 #CoxData_metabric$metabric_prob_THR25_quartiles <- factor(CoxData_metabric$metabric_prob_THR25_quartiles, levels = c('1', '2', '3', '4'))
 #levels(CoxData_metabric$metabric_prob_THR25_quartiles) <- paste0('Q', levels(CoxData_metabric$metabric_prob_THR25_quartiles))
 
-CoxData_metabric$metabric_prob_THR50_1_quartiles <- factor(CoxData_metabric$metabric_prob_THR50_1_quartiles, levels = c('1', '2', '3', '4'))
-levels(CoxData_metabric$metabric_prob_THR50_1_quartiles) <- paste0('Q', levels(CoxData_metabric$metabric_prob_THR50_1_quartiles))
+CoxData_metabric$metabric_prob_THR50_1_quartiles <- factor(CoxData_metabric$metabric_prob_THR50_quartiles, levels = c('1', '2', '3', '4'))
+levels(CoxData_metabric$metabric_prob_THR50_quartiles) <- paste0('Q', levels(CoxData_metabric$metabric_prob_THR50_quartiles))
 
 #CoxData_metabric$metabric_prob_THR50_2_quartiles <- factor(CoxData_metabric$metabric_prob_THR50_2_quartiles, levels = c('1', '2', '3', '4'))
 #levels(CoxData_metabric$metabric_prob_THR50_2_quartiles) <- paste0('Q', levels(CoxData_metabric$metabric_prob_THR50_2_quartiles))
@@ -1117,8 +1210,8 @@ levels(CoxData_metabric$metabric_prob_THR50_1_quartiles) <- paste0('Q', levels(C
 #Fit_sig_metabric_os_coxph_THR25_quartiles <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR25_quartiles, data = CoxData_metabric)
 #summary_metabric_os_coxph_THR25_quartiles <- summary(Fit_sig_metabric_os_coxph_THR25_quartiles)
 
-Fit_sig_metabric_os_coxph_THR50_1_quartiles <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_1_quartiles, data = CoxData_metabric)
-summary_metabric_os_coxph_THR50_1_quartiles <- summary(Fit_sig_metabric_os_coxph_THR50_1_quartiles)
+Fit_sig_metabric_os_coxph_THR50_quartiles <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_quartiles, data = CoxData_metabric)
+summary_metabric_os_coxph_THR50_quartiles <- summary(Fit_sig_metabric_os_coxph_THR50_quartiles)
 
 #Fit_sig_metabric_os_coxph_THR50_2_quartiles <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_2_quartiles, data = CoxData_metabric)
 #summary_metabric_os_coxph_THR50_2_quartiles <- summary(Fit_sig_metabric_os_coxph_THR50_2_quartiles)
@@ -1169,8 +1262,8 @@ summary(Fit_sig_metabric_RFS_coxph_THR50)
 #Fit_sig_metabric_RFS_coxph_THR25_quartiles <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR25_quartiles, data = CoxData_metabric)
 #summary_metabric_RFS_coxph_THR25_quartiles <- summary(Fit_sig_metabric_RFS_coxph_THR25_quartiles)
 
-Fit_sig_metabric_RFS_coxph_THR50_1_quartiles <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_1_quartiles, data = CoxData_metabric)
-summary_metabric_RFS_coxph_THR50_1_quartiles <- summary(Fit_sig_metabric_RFS_coxph_THR50_1_quartiles)
+Fit_sig_metabric_RFS_coxph_THR50_quartiles <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_1_quartiles, data = CoxData_metabric)
+summary_metabric_RFS_coxph_THR50_quartiles <- summary(Fit_sig_metabric_RFS_coxph_THR50_quartiles)
 
 #Fit_sig_metabric_RFS_coxph_THR50_2_quartiles <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_2_quartiles, data = CoxData_metabric)
 #summary_metabric_RFS_coxph_THR50_2_quartiles <- summary(Fit_sig_metabric_RFS_coxph_THR50_2_quartiles)
@@ -1228,8 +1321,8 @@ summary_metabric_RFS_coxph_THR50_1_quartiles <- summary(Fit_sig_metabric_RFS_cox
 #CoxData_metabric_PAM$metabric_prob_THR25_quartiles <- factor(CoxData_metabric_PAM$metabric_prob_THR25_quartiles, levels = c('1', '2', '3', '4'))
 #levels(CoxData_metabric_PAM$metabric_prob_THR25_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM$metabric_prob_THR25_quartiles))
 
-CoxData_metabric_PAM$metabric_prob_THR50_1_quartiles <- factor(CoxData_metabric_PAM$metabric_prob_THR50_1_quartiles, levels = c('1', '2', '3', '4'))
-levels(CoxData_metabric_PAM$metabric_prob_THR50_1_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM$metabric_prob_THR50_1_quartiles))
+CoxData_metabric_PAM$metabric_prob_THR50_quartiles <- factor(CoxData_metabric_PAM$metabric_prob_THR50_quartiles, levels = c('1', '2', '3', '4'))
+levels(CoxData_metabric_PAM$metabric_prob_THR50_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM$metabric_prob_THR50_quartiles))
 
 #CoxData_metabric_PAM$metabric_prob_THR50_2_quartiles <- factor(CoxData_metabric_PAM$metabric_prob_THR50_2_quartiles, levels = c('1', '2', '3', '4'))
 #levels(CoxData_metabric_PAM$metabric_prob_THR50_2_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM$metabric_prob_THR50_2_quartiles))
@@ -1239,8 +1332,8 @@ levels(CoxData_metabric_PAM$metabric_prob_THR50_1_quartiles) <- paste0('Q', leve
 #CoxData_metabric_PAM_Q1vsQ4_THR25$metabric_prob_THR25_quartiles <- factor(CoxData_metabric_PAM_Q1vsQ4_THR25$metabric_prob_THR25_quartiles, levels = c('1', '4'))
 #levels(CoxData_metabric_PAM_Q1vsQ4_THR25$metabric_prob_THR25_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM_Q1vsQ4_THR25$metabric_prob_THR25_quartiles))
 
-CoxData_metabric_PAM_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles <- factor(CoxData_metabric_PAM_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles, levels = c('1', '4'))
-levels(CoxData_metabric_PAM_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles))
+CoxData_metabric_PAM_Q1vsQ4_THR50$metabric_prob_THR50_quartiles <- factor(CoxData_metabric_PAM_Q1vsQ4_THR50$metabric_prob_THR50_quartiles, levels = c('1', '4'))
+levels(CoxData_metabric_PAM_Q1vsQ4_THR50$metabric_prob_THR50_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM_Q1vsQ4_THR50$metabric_prob_THR50_quartiles))
 
 #CoxData_metabric_PAM_Q1vsQ4_THR50_2$metabric_prob_THR50_2_quartiles <- factor(CoxData_metabric_PAM_Q1vsQ4_THR50_2$metabric_prob_THR50_2_quartiles, levels = c('1', '4'))
 #levels(CoxData_metabric_PAM_Q1vsQ4_THR50_2$metabric_prob_THR50_2_quartiles) <- paste0('Q', levels(CoxData_metabric_PAM_Q1vsQ4_THR50_2$metabric_prob_THR50_2_quartiles))
@@ -1251,8 +1344,8 @@ levels(CoxData_metabric_PAM_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles) <- p
 #CoxData_metabric_Q1vsQ4_THR25$metabric_prob_THR25_quartiles <- factor(CoxData_metabric_Q1vsQ4_THR25$metabric_prob_THR25_quartiles, levels = c('1', '4'))
 #levels(CoxData_metabric_Q1vsQ4_THR25$metabric_prob_THR25_quartiles) <- paste0('Q', levels(CoxData_metabric_Q1vsQ4_THR25$metabric_prob_THR25_quartiles))
 
-CoxData_metabric_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles <- factor(CoxData_metabric_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles, levels = c('1', '4'))
-levels(CoxData_metabric_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles) <- paste0('Q', levels(CoxData_metabric_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles))
+CoxData_metabric_Q1vsQ4_THR50$metabric_prob_THR50_quartiles <- factor(CoxData_metabric_Q1vsQ4_THR50$metabric_prob_THR50_quartiles, levels = c('1', '4'))
+levels(CoxData_metabric_Q1vsQ4_THR50$metabric_prob_THR50_quartiles) <- paste0('Q', levels(CoxData_metabric_Q1vsQ4_THR50$metabric_prob_THR50_quartiles))
 
 #CoxData_metabric_Q1vsQ4_THR50_2$metabric_prob_THR50_2_quartiles <- factor(CoxData_metabric_Q1vsQ4_THR50_2$metabric_prob_THR50_2_quartiles, levels = c('1', '4'))
 #levels(CoxData_metabric_Q1vsQ4_THR50_2$metabric_prob_THR50_2_quartiles) <- paste0('Q', levels(CoxData_metabric_Q1vsQ4_THR50_2$metabric_prob_THR50_2_quartiles))
@@ -1271,7 +1364,7 @@ levels(CoxData_metabric_Q1vsQ4_THR50_1$metabric_prob_THR50_1_quartiles) <- paste
 #        function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR25_quartiles, data = x)))
 
 lapply(split(CoxData_metabric_PAM, CoxData_metabric_PAM$Pam50...Claudin.low.subtype),
-       function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_1_quartiles, data = x)))
+       function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_quartiles, data = x)))
 
 #lapply(split(CoxData_metabric_PAM, CoxData_metabric_PAM$Pam50...Claudin.low.subtype),
 #       function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_2_quartiles, data = x)))
@@ -1284,23 +1377,19 @@ lapply(split(CoxData_metabric_PAM, CoxData_metabric_PAM$Pam50...Claudin.low.subt
 # lapply(split(CoxData_metabric_PAM_Q1vsQ4_THR25, CoxData_metabric_PAM_Q1vsQ4_THR25$Pam50...Claudin.low.subtype),
 #        function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR25_quartiles, data = x)))
 # 
-# lapply(split(CoxData_metabric_PAM_Q1vsQ4_THR50_1, CoxData_metabric_PAM_Q1vsQ4_THR50_1$Pam50...Claudin.low.subtype),
-#        function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_1_quartiles, data = x)))
-# 
+lapply(split(CoxData_metabric_PAM_Q1vsQ4_THR50, CoxData_metabric_PAM_Q1vsQ4_THR50$Pam50...Claudin.low.subtype),
+        function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_quartiles, data = x)))
+ 
 # lapply(split(CoxData_metabric_PAM_Q1vsQ4_THR50_2, CoxData_metabric_PAM_Q1vsQ4_THR50_2$Pam50...Claudin.low.subtype),
 #        function(x) summary(coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ metabric_prob_THR50_2_quartiles, data = x)))
 
 ################################
 # rfs: quartiles: all
 # fit on each PAM50 subtype
-#lapply(split(CoxData_metabric_PAM, CoxData_metabric_PAM$Pam50...Claudin.low.subtype),
-#       function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR25_quartiles, data = x)))
 
 lapply(split(CoxData_metabric_PAM, CoxData_metabric_PAM$Pam50...Claudin.low.subtype),
-       function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_1_quartiles, data = x)))
+       function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quartiles, data = x)))
 
-#lapply(split(CoxData_metabric_PAM, CoxData_metabric_PAM$Pam50...Claudin.low.subtype),
-#       function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_2_quartiles, data = x)))
 
 ################################
 # rfs: quartiles: Q1 vs Q4
@@ -1310,9 +1399,9 @@ lapply(split(CoxData_metabric_PAM, CoxData_metabric_PAM$Pam50...Claudin.low.subt
 # lapply(split(CoxData_metabric_PAM_Q1vsQ4_THR25, CoxData_metabric_PAM_Q1vsQ4_THR25$Pam50...Claudin.low.subtype),
 #        function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR25_quartiles, data = x)))
 # 
-# lapply(split(CoxData_metabric_PAM_Q1vsQ4_THR50_1, CoxData_metabric_PAM_Q1vsQ4_THR50_1$Pam50...Claudin.low.subtype),
-#        function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_1_quartiles, data = x)))
-# 
+lapply(split(CoxData_metabric_PAM_Q1vsQ4_THR50, CoxData_metabric_PAM_Q1vsQ4_THR50$Pam50...Claudin.low.subtype),
+        function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quartiles, data = x)))
+ 
 # lapply(split(CoxData_metabric_PAM_Q1vsQ4_THR50_2, CoxData_metabric_PAM_Q1vsQ4_THR50_2$Pam50...Claudin.low.subtype),
 #        function(x) summary(coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_2_quartiles, data = x)))
 

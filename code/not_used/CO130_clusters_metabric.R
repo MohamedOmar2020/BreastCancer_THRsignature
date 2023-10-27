@@ -22,37 +22,74 @@ library(survminer)
 library(survival)
 library(tidyverse)
 library(pheatmap)
+library(readxl)
+
+#############################
+## load the ET signatures
+All <- read_xlsx('./data/ET-9 Selection Steps.xlsx')
+ET60 <- All$`ET-60`[!is.na(All$`ET-60`)]
 
 #################
-THR_signature <- readxl::read_xlsx("./data/THR Signatures_sep23.xlsx")
+# THR signature
+#################
+THR_signature <- readxl::read_xlsx("./data/THR_Signatures_Jan25_2023.xlsx")
 
 # get the THR50 signature
-THR_50 <- THR_signature$`THR-50.1`[!is.na(THR_signature$`THR-50.1`)]
+THR_70 <- THR_signature$`THR-70`[!is.na(THR_signature$`THR-70`)]
 
-THR_50 <- gsub('-', '', THR_50)
+THR_70 <- gsub('-', '', THR_70)
 
-# load the THR50 i20 genes
-THR50_i20 <- readxl::read_xlsx("./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE.xlsx")$gene
+# combine
+CO130 <- c(ET60, THR_70)
+CO130 <- CO130[!CO130 %in% 'Gene']
 
-################
+#############################################
 # Load the  expression and pheno data
 load('./objs/forKTSP.rda')
+##############################################
 
+##############################################
 # fix gene names
-rownames(Expr_metabric_refAll)[grep('^ZNF652', rownames(Expr_metabric_refAll))]
+##############################################
+# Fix in TCGA
+setdiff(CO130, rownames(Expr_tcga_refAll))
+grep('^FAM63A', rownames(Expr_tcga_refAll), value = TRUE) # MINDY1
+grep('^FAM176A', rownames(Expr_tcga_refAll), value = TRUE) # EVA1A
+grep('^LEPREL1', rownames(Expr_tcga_refAll), value = TRUE) # P3H2
+grep('^DULLARD', rownames(Expr_tcga_refAll), value = TRUE) # SDHAF3
 
-# filter the THR signatures to include only the genes present in the expr matrices
-THR_50_fil <- THR_50[THR_50 %in% rownames(Expr_metabric_refAll)]
+rownames(Expr_tcga_refAll)[rownames(Expr_tcga_refAll) == 'DULLARD'] <- 'HSA011916'
+rownames(Expr_tcga_refAll)[rownames(Expr_tcga_refAll) == 'GPR56'] <- 'ADGRG1'
+rownames(Expr_tcga_refAll)[rownames(Expr_tcga_refAll) == 'FAM116B'] <- 'DENND6B'
+rownames(Expr_tcga_refAll)[rownames(Expr_tcga_refAll) == 'FAM46B'] <- 'TENT5B'
 
-THR_56 <- c(THR_50_fil, 'LMNB2', 'CDC20', 'KIF2C', 'FAM64A', 'KIF4A', 'TPX2')
+###############
+# Fix in metabric
+setdiff(CO130, rownames(Expr_metabric_refAll))
+grep('^FAM63A', rownames(Expr_metabric_refAll), value = TRUE) # MINDY1
+grep('^FAM176A', rownames(Expr_metabric_refAll), value = TRUE) # EVA1A
+grep('^LEPREL1', rownames(Expr_metabric_refAll), value = TRUE) # P3H2
+grep('^RSNL2', rownames(Expr_metabric_refAll), value = TRUE) # SDHAF3
 
-THR56_i20 <- c(THR_56, THR50_i20)
-THR56_i20 <- THR56_i20[!duplicated(THR56_i20)]
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'FAM63A'] <- 'MINDY1'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'FAM176A'] <- 'EVA1A'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'LEPREL1'] <- 'P3H2'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'ACN9'] <- 'SDHAF3'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'GPR56'] <- 'ADGRG1'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'CTDNEP1'] <- 'HSA011916'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'FAM116B'] <- 'DENND6B'
+rownames(Expr_metabric_refAll)[rownames(Expr_metabric_refAll) == 'FAM46B'] <- 'TENT5B'
+
+##############
+# filter the signatures to include only the genes present in the expr matrices
+CO130_fil <- CO130[CO130 %in% rownames(Expr_tcga_refAll) & CO130 %in% rownames(Expr_metabric_refAll)]
+
+setdiff(CO130, CO130_fil)
 
 #############################################################################################
 #############################################################################################
-## heatmap (THR 50)
-Expr_metabric_refAll_heatmap <- Expr_metabric_refAll[THR56_i20, ] 
+## heatmap (THR 70)
+Expr_metabric_refAll_heatmap <- Expr_metabric_refAll[CO130_fil, ] 
 
 # Create annotation for columns/samples based on some clinical variables:
 Pheno_metabric_forHeatmap <- Pheno_metabric
@@ -101,7 +138,7 @@ ColPal <- colorRampPalette(colors = rev(brewer.pal(11,"RdYlBu")))(20)
 ColPal2 <- rev(colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(20))
 
 # heatmap with clinical annotation
-tiff('./figures/THR56i20_clusters/THR56_heatmap_metabric.tiff', width=3000, height=2000, res = 300)
+tiff('./figures/CO130_metabric_clusters/CO130_heatmap_metabric.tiff', width=3000, height=2000, res = 300)
 pheatmap(Expr_metabric_refAll_heatmap,
          scale = "none",
          #color = rev(heat.colors(20)),
@@ -118,9 +155,9 @@ pheatmap(Expr_metabric_refAll_heatmap,
          annotation_names_col = T,
          #annotation_row = AnnAll_metabric,
          annotation_names_row = T,
-         fontsize = 7,
+         fontsize = 8,
          #fontsize_col = 3,
-         fontsize_row = 8,
+         fontsize_row = 3,
          cex = 1,
          cutree_cols = 5,
          cutree_rows = 5,
@@ -149,11 +186,11 @@ heat_metabric <- pheatmap(Expr_metabric_refAll_heatmap,
                           fontsize = 7,
                           #fontsize_col = 3,
                           fontsize_row = 10,
-                          silent = TRUE,
                           cex = 1,
                           cutree_cols = 5,
                           cutree_rows = 5,
                           breaks = seq(-1, 1, by = 0.1),
+                          silent = TRUE,
                           main = "")
 
 clusters_metabric <- as.data.frame(cbind(t(Expr_metabric_refAll_heatmap), 
@@ -177,12 +214,14 @@ table(AnnAll_metabric$`THR clusters`)
 
 
 ann_colors$`THR clusters` <- colorRampPalette(colors = rev(brewer.pal(5,"Dark2")))(5)
-#ann_colors$`THR clusters` <- c("#66A61E", "#7570B3", "#1B9E77" , "#D95F02", "#E7298A") 
-#levels(AnnAll_metabric$`THR clusters`) <- c('E1', 'T1', 'E3', 'E4', 'E2')
+levels(AnnAll_metabric$`THR clusters`) <- c('E1', 'E3', 'E2', 'T1', 'T2')
+# fix the color pallete to match that of THR50
+#ann_colors$`THR clusters` <- c("#66A61E", "#E7298A", "#1B9E77" , "#D95F02", "#7570B3") 
 names(ann_colors$`THR clusters`) <- levels(AnnAll_metabric$`THR clusters`)
+table(AnnAll_metabric$`THR clusters`)
 
 # heatmap with clinical annotation
-tiff('./figures/THR56i20_clusters/THR56_heatmap_metabric_clusters.tiff', width=3000, height=2000, res = 300)
+tiff('./figures/CO130_metabric_clusters/CO130_heatmap_metabric_clusters.tiff', width=3000, height=2000, res = 300)
 pheatmap(Expr_metabric_refAll_heatmap, 
          scale = "none",
          #color = rev(heat.colors(20)),
@@ -201,7 +240,7 @@ pheatmap(Expr_metabric_refAll_heatmap,
          annotation_names_row = T,
          fontsize = 7,
          #fontsize_col = 3,
-         fontsize_row = 8,
+         fontsize_row = 3,
          cex = 1,
          cutree_cols = 5,
          cutree_rows = 5,
@@ -209,6 +248,7 @@ pheatmap(Expr_metabric_refAll_heatmap,
          main = "")
 dev.off()
 
+#############################################################################################################
 ##############################################################################################################
 
 ## Keep only the relevant information (Metastasis Event and Time)
@@ -218,54 +258,73 @@ survival_metabric <- Pheno_metabric[, c("Overall.Survival.Status", "Overall.Surv
                                         "X3.Gene.classifier.subtype", "THR clusters")] 
 
 survival_metabric$`THR clusters` <- as.factor(survival_metabric$`THR clusters`)
-#levels(survival_metabric$`THR clusters`) <- c('E1', 'T1', 'E3', 'E4', 'E2')
-
+levels(survival_metabric$`THR clusters`) <- c('E1', 'E3', 'E2', 'T1', 'T2')
+#survival_metabric$`THR clusters` <- factor(survival_metabric$`THR clusters`, levels = c('E1', 'E2a', 'E2b', 'E3', 'PNBC'))
 # OS
 Fit_metabric_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ as.factor(`THR clusters`), data = survival_metabric)
 
 # RFS
 Fit_metabric_RFS <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ as.factor(`THR clusters`), data = survival_metabric)
 
+
 ############################################################################
 ############################################################################
 # plot OS
 cluster_colors <- as.vector(ann_colors$`THR clusters`)
+#cluster_colors <- levels(survival_metabric$`THR clusters`)
 
-pdf("./figures/THR56i20_clusters/metabric_os_5clusters.pdf", width = 10, height = 8, onefile = F)
+#cluster_colors <- c("#1B9E77", "#E7298A", "#66A61E" , "#D95F02", "#7570B3") 
+#cluster_colors2 <- c('#1B9E77', "#c1b026", "#D95F02", '#7570B3')
+
+#names(ann_colors$`THR clusters`) <- levels(survival_metabric$`THR clusters`)
+#cluster_colors <- as.vector(ann_colors$`THR clusters`)
+
+
+pdf("./figures/CO130_metabric_clusters/CO130_metabric_os_5clusters_20yrs.pdf", width = 10, height = 8, onefile = F)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
            xlim = c(0,240),
-           #ylim = c(0.5, 1.00),
            legend.labs = levels(survival_metabric$`THR clusters`),
-           legend.title	= 'THR-56 + i20 clusters',
+           legend.title	= '',
            pval.size = 12,
            break.x.by = 40,
            ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
-           #title = 'THR50 clusters and OS'
+           #title = 'THR70 clusters and OS'
 )
 dev.off()
 
 
 # plot RFS
-pdf("./figures/THR56i20_clusters/metabric_rfs_5clusters_all.pdf", width = 10, height = 8, onefile = F)
+png("./figures/CO130_metabric_clusters/CO130_metabric_rfs_5clusters_20yrs.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
-           #xlim = c(0,240),
+           xlim = c(0,240),
            legend.labs = levels(survival_metabric$`THR clusters`),
-           legend.title	= 'THR-56 +i20 clusters',
-           pval.size = 12,
-           #break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
-           #title = 'THR50 clusters and RFS'
-)
+           #title = 'THR70 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
 dev.off()
-
 

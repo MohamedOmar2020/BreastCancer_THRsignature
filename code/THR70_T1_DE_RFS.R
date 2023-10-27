@@ -243,8 +243,8 @@ save(THR70_I20_c3_model, file = './objs/THR70_I20_model.rda')
 #####################################
 library(caret)
 ctrl <- rfeControl(functions=rfFuncs, method="cv", number=10)
-results <- rfe(Data_c3[,THR50_c3_top20$gene], Data_c3$RFS_c3, sizes=c(1:4), rfeControl=ctrl)
-print(results)
+#results <- rfe(Data_c3[,THR50_c3_top20$gene], Data_c3$RFS_c3, sizes=c(1:4), rfeControl=ctrl)
+#print(results)
 
 # Get the optimal number of variables
 # Select the top 5 variables based on the ranking
@@ -1043,6 +1043,14 @@ survival_metabric_E1$HER2.Status <- factor(survival_metabric_E1$HER2.Status, lev
 # fit survival curves
 Fit_sig_metabric_RFS_E1_byHER2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_E1)
 
+# RFS COXPH
+
+survival_metabric_E1_coxph <- survival_metabric_E1
+survival_metabric_E1_coxph$HER2.Status <- factor(survival_metabric_E1_coxph$HER2.Status, levels = c('Negative', 'Positive'))
+table(survival_metabric_E1_coxph$HER2.Status)
+Fit_sig_metabric_RFS_E1_byHER2_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_E1_coxph)
+summary(Fit_sig_metabric_RFS_E1_byHER2_coxph)
+
 # plot
 png("./figures/T1_DE_THR70_RFS/THR70_E1_byHER2.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_RFS_E1_byHER2,
@@ -1092,6 +1100,14 @@ survival_metabric_E2$HER2.Status <- factor(survival_metabric_E2$HER2.Status, lev
 # fit survival curves
 Fit_sig_metabric_RFS_E2_byHER2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_E2)
 
+# RFS COXPH
+
+survival_metabric_E2_coxph <- survival_metabric_E2
+survival_metabric_E2_coxph$HER2.Status <- factor(survival_metabric_E2_coxph$HER2.Status, levels = c('Negative', 'Positive'))
+table(survival_metabric_E2_coxph$HER2.Status)
+Fit_sig_metabric_RFS_E2_byHER2_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_E2_coxph)
+summary(Fit_sig_metabric_RFS_E2_byHER2_coxph)
+
 # plot
 png("./figures/T1_DE_THR70_RFS/THR70_E2_byHER2.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_sig_metabric_RFS_E2_byHER2,
@@ -1140,6 +1156,14 @@ survival_metabric_E3$HER2.Status <- factor(survival_metabric_E3$HER2.Status, lev
 
 # fit survival curves
 Fit_sig_metabric_RFS_E3_byHER2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_E3)
+
+# RFS COXPH
+
+survival_metabric_E3_coxph <- survival_metabric_E3
+survival_metabric_E3_coxph$HER2.Status <- factor(survival_metabric_E3_coxph$HER2.Status, levels = c('Negative', 'Positive'))
+table(survival_metabric_E3_coxph$HER2.Status)
+Fit_sig_metabric_RFS_E3_byHER2_coxph <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ HER2.Status, data = survival_metabric_E3_coxph)
+summary(Fit_sig_metabric_RFS_E3_byHER2_coxph)
 
 # plot
 png("./figures/T1_DE_THR70_RFS/THR70_E3_byHER2.png", width = 2000, height = 2000, res = 350)
@@ -1446,7 +1470,7 @@ dev.off()
 ## survival analysis X3 ER+ high vs low prolif
 ##########################################################################################
 
-# keep only X3 TNBC and HER2+
+# keep only ER+ high and low prolif
 table(survival_metabric2$X3.Gene.classifier.subtype)
 survival_metabric_X3_ERprolif <- survival_metabric2[survival_metabric2$X3.Gene.classifier.subtype %in% c('ER+/HER2- High Prolif', 'ER+/HER2- Low Prolif'), ] 
 survival_metabric_X3_ERprolif$X3.Gene.classifier.subtype <- factor(survival_metabric_X3_ERprolif$X3.Gene.classifier.subtype, levels = c('ER+/HER2- High Prolif', 'ER+/HER2- Low Prolif'))
@@ -1498,7 +1522,7 @@ ggsurvplot(Fit_sig_metabric_RFS_THR70_X3_ERprolif_THR70_I20,
            pval.size  = 12,
            xlim = c(0, 240),
            break.x.by = 40,
-           legend.labs = c('ER-HP', 'ER-LP'),
+           legend.labs = c('ER+ HP', 'ER+ LP'),
            legend.title = c(''),
            ggtheme = theme(axis.line = element_line(colour = "black"),
                            panel.grid.major = element_line(colour = "grey90"),

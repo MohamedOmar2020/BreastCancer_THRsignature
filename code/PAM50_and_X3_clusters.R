@@ -284,8 +284,9 @@ ggsurvplot(Fit_metabric_os_PAM50original,
 dev.off()
 
 
-# RFS
-png("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original.png", width = 2000, height = 2000, res = 350)
+## RFS
+# 240 months
+png("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original_240.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_rfs_PAM50original,
            risk.table = FALSE,
            pval = FALSE,
@@ -312,6 +313,66 @@ ggsurvplot(Fit_metabric_rfs_PAM50original,
            #title = 'Original PAM50 subtypes and RFS'
            ) + guides(
              colour = guide_legend(ncol = 2))
+dev.off()
+
+# 150 months
+png("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original_150.png", width = 2000, height = 2000, res = 350)
+ggsurvplot(Fit_metabric_rfs_PAM50original,
+           risk.table = FALSE,
+           pval = FALSE,
+           #palette = cluster_colors,
+           xlim = c(0,150),
+           legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
+           legend.title	= '',
+           pval.size = 11,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'Original PAM50 subtypes and RFS'
+) + guides(
+  colour = guide_legend(ncol = 2))
+dev.off()
+
+# 120 months
+png("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original_120.png", width = 2000, height = 2000, res = 350)
+ggsurvplot(Fit_metabric_rfs_PAM50original,
+           risk.table = FALSE,
+           pval = FALSE,
+           #palette = cluster_colors,
+           xlim = c(0,120),
+           legend.labs = c('Basal', 'Claudin-low', 'Her2+', 'Luminal A', 'Luminal B'),
+           legend.title	= '',
+           pval.size = 11,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'Original PAM50 subtypes and RFS'
+) + guides(
+  colour = guide_legend(ncol = 2))
 dev.off()
 
 ############################################################
