@@ -218,9 +218,11 @@ os_surv_obj <- Surv(CoxData_metabric$`Overall.Survival..Months.`, CoxData_metabr
 
 # Fit the survival curves
 fit_os_bestcutoff_tertiles_prob <- survfit(os_surv_obj ~ groups_prob_os)
-tiff("./figures/CO130_metabric/CO130_metabric_os_bestCutoff_tertiles_prob.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/CO130_metabric_prognostic/CO130_metabric_os_bestCutoff_tertiles_prob.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(fit_os_bestcutoff_tertiles_prob, 
            data = CoxData_metabric, 
+           xlim = c(0,240),
+           break.x.by = 40,
            risk.table = TRUE, pval = TRUE,
            ggtheme = theme_survminer(base_size = 16, font.x = c(16, 'bold.italic', 'black'), font.y = c(16, 'bold.italic', 'black'), font.tickslab = c(16, 'plain', 'black'), font.legend = c(16, 'bold', 'black')),
            legend.labs = c('Q1', 'Q2', 'Q3')
@@ -268,9 +270,11 @@ rfs_surv_obj <- Surv(CoxData_metabric$Relapse.Free.Status..Months., CoxData_meta
 
 # Fit the survival curves
 fit_rfs_bestcutoff_tertiles_prob <- survfit(rfs_surv_obj ~ groups_prob_rfs)
-tiff("./figures/CO130_metabric/CO130_metabric_rfs_bestCutoff_tertiles_prob.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/CO130_metabric_prognostic/CO130_metabric_rfs_bestCutoff_tertiles_prob.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(fit_rfs_bestcutoff_tertiles_prob, 
            data = CoxData_metabric, 
+           xlim = c(0,240),
+           break.x.by = 40,
            risk.table = TRUE, pval = TRUE,
            ggtheme = theme_survminer(base_size = 16, font.x = c(16, 'bold.italic', 'black'), font.y = c(16, 'bold.italic', 'black'), font.tickslab = c(16, 'plain', 'black'), font.legend = c(16, 'bold', 'black')),
            legend.labs = c('Q1', 'Q2', 'Q3')

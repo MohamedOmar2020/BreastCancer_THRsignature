@@ -185,6 +185,7 @@ heat_metabric <- pheatmap(Expr_metabric_noHER2,
 clusters_metabric <- as.data.frame(cbind(t(Expr_metabric_noHER2), 
                                          'THR clusters' = cutree(heat_metabric$tree_col, 
                                                                  k = 4)))
+
 clusters_metabric$`THR clusters` <- paste0('c', clusters_metabric$`THR clusters`)
 table(clusters_metabric$`THR clusters`)
 
@@ -199,7 +200,14 @@ combined_clusters_metabric <- rbind(clusters_metabric, HER2_samples)
 
 table(combined_clusters_metabric$`THR clusters`)
 
-##########
+#######
+# rename the levels
+combined_clusters_metabric$`THR clusters` <- as.factor(combined_clusters_metabric$`THR clusters`)
+levels(combined_clusters_metabric$`THR clusters`) <- c('E1', 'E2', 'E3', 'T1', 'HER2+')
+
+table(combined_clusters_metabric$`THR clusters`)
+
+##############################
 ## add the cluster info to the phenotype table
 
 # Reorder the rows of Pheno_metabric
@@ -379,3 +387,294 @@ ggsurvplot(Fit_metabric_RFS,
   colour = guide_legend(ncol = 3))
 dev.off()
 
+
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+# Divide T1 using immune signatures ------------------------
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## get T1----------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+T1_pheno <- Pheno_metabric[Pheno_metabric$`THR clusters` == 'T1', ]
+T1_expr <- Expr_metabric_refAll[, rownames(T1_pheno)]
+
+all(rownames(T1_pheno) == colnames(T1_expr))
+
+
+# RFS_T1 <- as.factor(T1_pheno$c3_rfs_binary)
+# Data_T1 <- as.data.frame(cbind(t(T1_expr), RFS_T1))
+# Data_T1$RFS_T1 <- as.factor(Data_T1$RFS_T1)
+# levels(Data_T1$RFS_T1) <- c('longSurv', 'shortSurv')
+# table(Data_T1$RFS_T1)
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## Load the i20 signature ---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+i20 <- read_xlsx("./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE.xlsx")$gene
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## Load the i45 signature ---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+load('objs/THR56T1sep_i_genesets.rda')
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## use I20 to separate T1 into two clusters
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+#&&&&&&&&&&&&&&&&&&
+### calculate signature score---------
+#&&&&&&&&&&&&&&&&&&
+T1_i20_expr <- T1_expr[i20, ]
+T1_i45_expr <- T1_expr[i30p15, ]
+
+# using the average expression
+#T1_signature_scores <- colMeans(T1_i20_expr, na.rm = TRUE)  # Use colMeans since samples are in columns
+
+# using GSVA
+gene_sets <- list(i20 = rownames(T1_i20_expr), i45 = rownames(T1_i45_expr))
+T1_signature_scores <- gsva(T1_expr, gene_sets, method = "ssgsea")
+T1_signature_scores_i20 <- as.vector(T1_signature_scores[1, ])
+T1_signature_scores_i45 <- as.vector(T1_signature_scores[2, ])
+
+T1_pheno$i20_score <- T1_signature_scores_i20
+T1_pheno$i45_score <- T1_signature_scores_i45
+
+# Perform PCA on the expression data of the i20 genes
+#pca_result <- prcomp(t(T1_i20_expr), scale. = TRUE)
+# Use the first principal component as the signature score
+#T1_signature_scores <- pca_result$x[, 1]
+
+# using z-score
+#T1_signature_scores <- colMeans(scale(T1_i20_expr), na.rm = TRUE)
+
+# using logistic regression:
+Data_T1 <- data.frame(cbind(t(T1_expr), 'RFS' = T1_pheno$Relapse.Free.Status))
+Data_T1$RFS <- as.factor(Data_T1$RFS)
+#levels(Data_T1$RFS) <- c('longSurv', 'shortSurv')
+table(Data_T1$RFS)
+i20_logReg_model <- glm(as.formula((paste("RFS ~", paste(i20, collapse = "+")))), data = Data_T1, family = "binomial")
+T1_pheno$i20_logReg_score <- i20_logReg_model %>% predict(Data_T1 , type = "response")
+
+
+#&&&&&&&&&&&&&&&&&&
+### determine the best threshold-------
+#&&&&&&&&&&&&&&&&&&
+median_threshold_i20 <- median(T1_signature_scores_i20)
+quantile_threshold_i20 <- quantile(T1_signature_scores_i20, probs = 0.75)  # 75th percentile as an example
+ROC_thr_I20 <- coords(roc(T1_pheno$Relapse.Free.Status, T1_pheno$i20_logReg_score, direction = "<"), "best")["threshold"]
+
+#&&&&&&&&&&&&&&&&&&&&&&
+# save the logistic regression model and the threshold-------
+#&&&&&&&&&&&&&&&&&&&&&&
+save(i20_logReg_model, ROC_thr_I20, file = './objs/metabric_CO130_derived_T1_THR50_i20_logReg_model_Her2_sep.rda')
+
+#&&&&&&&&&&&&&&&&&&
+### Assign samples to subclass based on i20 expression-------
+#&&&&&&&&&&&&&&&&&&
+T1_pheno$immune_clusters_i20_GSVA <- ifelse(T1_signature_scores_i20 >= median_threshold_i20, "T1_i+", "T1_i-")
+table(T1_pheno$immune_clusters_i20_GSVA)
+T1_pheno$immune_clusters_i20_GSVA <- factor(T1_pheno$immune_clusters_i20_GSVA, levels = c('T1_i-', 'T1_i+'))
+
+T1_pheno$immune_clusters_i20_logReg <- ifelse(T1_pheno$i20_logReg_score >= ROC_thr_I20$threshold, "PQNBC_i-", "PQNBC_i+")
+table(T1_pheno$immune_clusters_i20_logReg)
+T1_pheno$immune_clusters_i20_logReg <- factor(T1_pheno$immune_clusters_i20_logReg, levels = c('PQNBC_i-', 'PQNBC_i+'))
+
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## Keep only the relevant information (Metastasis Event and Time)-----
+T1_pheno_survival <- T1_pheno[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype", "immune_clusters_i20_GSVA", "immune_clusters_i20_logReg")]
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+CoxData_metabric_T1 <- data.frame(T1_pheno_survival)
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## recombine c3 with the rest---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+T1 <- data.frame(T1_immune_clusters_i20_GSVA = T1_pheno$immune_clusters_i20_GSVA,
+                 T1_immune_clusters_i20_logReg = T1_pheno$immune_clusters_i20_logReg,
+                 `Sample.ID` = rownames(T1_pheno))
+
+rownames(T1) <- rownames(T1_pheno)
+
+
+# merge
+Pheno_metabric$`THR clusters`[Pheno_metabric$`THR clusters` == 'T1'] <- NA
+
+
+Pheno_metabric2 <- merge(x = T1, y = Pheno_metabric, by="Sample.ID", all.y = TRUE)
+
+Pheno_metabric2 <- Pheno_metabric2 %>% 
+  mutate(merged_THR_clusters_i20_GSVA = coalesce(T1_immune_clusters_i20_GSVA,`THR clusters`)) %>%
+  mutate(merged_THR_clusters_i20_logReg = coalesce(T1_immune_clusters_i20_logReg,`THR clusters`))
+
+Pheno_metabric2$merged_THR_clusters_i20_GSVA <- droplevels(Pheno_metabric2$merged_THR_clusters_i20_GSVA)
+Pheno_metabric2$merged_THR_clusters_i20_logReg <- droplevels(Pheno_metabric2$merged_THR_clusters_i20_logReg)
+
+table(Pheno_metabric2$merged_THR_clusters_i20_GSVA)
+table(Pheno_metabric2$merged_THR_clusters_i20_logReg)
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## survival analysis---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## Keep only the relevant information (Metastasis Event and Time)
+survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Survival..Months.", 
+                                         "Relapse.Free.Status", "Relapse.Free.Status..Months.", 
+                                         "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC",
+                                         "X3.Gene.classifier.subtype", 
+                                         "merged_THR_clusters_i20_GSVA", "merged_THR_clusters_i20_logReg" 
+)] 
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+### OS---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+cluster_colors <- c("#771b9e", "#9e771b", "#66A61E", "#E7298A", "#7570B3", "#D95F02")
+
+Fit_metabric_os_i20_GSVA <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20_GSVA, data = survival_metabric)
+
+png("./figures/CO130_metabric_clusters/CO130_metabric_os_5clusters_HER2sep_20yrs_T1_i20_GSVA.png", width = 2000, height = 2000, res = 300)
+ggsurvplot(Fit_metabric_os_i20_GSVA,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,240),
+           legend.labs = levels(survival_metabric$merged_THR_clusters_i20_GSVA),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
+dev.off()
+
+#&&&&&&&&&&&&&&&&&&&&&&
+### logistic regression------
+
+# fix the levels
+levels(survival_metabric$merged_THR_clusters_i20_logReg) <- c("PQNBC_i-", "PQNBC_i+", "E2", 'E3', 'E1', 'HER2+')
+
+Fit_metabric_os_i20_logReg <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20_logReg, data = survival_metabric)
+
+png("./figures/CO130_metabric_clusters/CO130_metabric_os_5clusters_HER2_sep_10yrs_T1_i20_logReg.png", width = 2000, height = 2000, res = 300)
+ggsurvplot(Fit_metabric_os_i20_logReg,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,240),
+           legend.labs = levels(survival_metabric$merged_THR_clusters_i20_logReg),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR31 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
+dev.off()
+
+# Cox
+cox_metabric_logReg <- survival_metabric
+cox_metabric_logReg$merged_THR_clusters_i20_logReg <- factor(cox_metabric_logReg$merged_THR_clusters_i20_logReg, levels = c('E3', 'E2', 'E1', 'HER2+', 'PQNBC_i+', 'PQNBC_i-')) 
+cox_Fit_metabric_os_THR31_with_i20_logReg <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20_logReg, data = cox_metabric_logReg)
+summary(cox_Fit_metabric_os_THR31_with_i20_logReg)
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+### RFS---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Fit_metabric_rfs_i20_GSVA <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ merged_THR_clusters_i20_GSVA, data = survival_metabric)
+
+png("./figures/CO130_metabric_clusters/CO130_metabric_rfs_5clusters_HER2sep_20yrs_T1_i20.png", width = 2000, height = 2000, res = 300)
+ggsurvplot(Fit_metabric_rfs_i20_GSVA,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,240),
+           legend.labs = levels(survival_metabric$merged_THR_clusters_i20_GSVA),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
+dev.off()
+
+#&&&&&&&&&&&&&&&&&&&&&&
+### logistic regression------
+
+
+Fit_metabric_rfs_i20_logReg <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ merged_THR_clusters_i20_logReg, data = survival_metabric)
+
+png("./figures/CO130_metabric_clusters/CO130_metabric_rfs_5clusters_HER2_sep_10yrs_T1_i20_logReg.png", width = 2000, height = 2000, res = 300)
+ggsurvplot(Fit_metabric_rfs_i20_logReg,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,240),
+           legend.labs = levels(survival_metabric$merged_THR_clusters_i20_logReg),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR31 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
+dev.off()
+
+# Cox
+cox_metabric_logReg <- survival_metabric
+cox_Fit_metabric_rfs_THR31_with_i20_logReg <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ merged_THR_clusters_i20_logReg, data = cox_metabric_logReg)
+summary(cox_Fit_metabric_rfs_THR31_with_i20_logReg)

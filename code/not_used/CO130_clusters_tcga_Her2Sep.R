@@ -427,3 +427,327 @@ ggsurvplot(Fit_tcga_DFS,
   colour = guide_legend(ncol = 3))
 dev.off()
 
+
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+# Divide T1 using immune signatures ------------------------
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## get T1----------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+T1_pheno <- Pheno_tcga[Pheno_tcga$`THR clusters` == 'T1', ]
+T1_expr <- Expr_tcga_refAll[, rownames(T1_pheno)]
+
+all(rownames(T1_pheno) == colnames(T1_expr))
+
+#############
+# fix the survival information
+T1_pheno$Disease.Free.Status <- gsub("\\:.+", "", T1_pheno$Disease.Free.Status)
+T1_pheno$Overall.Survival.Status <- gsub("\\:.+", "", T1_pheno$Overall.Survival.Status)
+
+T1_pheno$Disease.Free.Status <- as.numeric(T1_pheno$Disease.Free.Status)
+T1_pheno$Overall.Survival.Status <- as.numeric(T1_pheno$Overall.Survival.Status)
+
+table(T1_pheno$Disease.Free.Status)
+table(T1_pheno$Overall.Survival.Status)
+
+table(Pheno_tcga$Disease.Free.Status)
+table(Pheno_tcga$Overall.Survival.Status)
+
+T1_pheno$Disease.Free..Months. <- as.numeric(T1_pheno$Disease.Free..Months.)
+T1_pheno$Overall.Survival..Months. <- as.numeric(T1_pheno$Overall.Survival..Months.)
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## Load the i20 signature ---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+i20 <- read_xlsx("./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE.xlsx")$gene
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## Load the i45 signature ---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+load('objs/THR56T1sep_i_genesets.rda')
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## use I20 to separate T1 into two clusters
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+#&&&&&&&&&&&&&&&&&&
+### calculate signature score---------
+#&&&&&&&&&&&&&&&&&&
+i20_filt <- intersect(i20, rownames(Expr_tcga_refAll))
+T1_i20_expr <- T1_expr[i20_filt, ]
+
+i45_filt <- intersect(i30p15, rownames(Expr_tcga_refAll))
+T1_i45_expr <- T1_expr[i45_filt, ]
+
+# using the average expression
+#T1_signature_scores <- colMeans(T1_i20_expr, na.rm = TRUE)  # Use colMeans since samples are in columns
+
+# using GSVA
+gene_sets <- list(i20 = rownames(T1_i20_expr), i45 = rownames(T1_i45_expr))
+T1_signature_scores <- gsva(T1_expr, gene_sets, method = "ssgsea")
+T1_signature_scores_i20 <- as.vector(T1_signature_scores[1, ])
+T1_signature_scores_i45 <- as.vector(T1_signature_scores[2, ])
+
+T1_pheno$i20_score <- T1_signature_scores_i20
+T1_pheno$i45_score <- T1_signature_scores_i45
+
+# Perform PCA on the expression data of the i20 genes
+#pca_result <- prcomp(t(T1_i20_expr), scale. = TRUE)
+# Use the first principal component as the signature score
+#T1_signature_scores <- pca_result$x[, 1]
+
+# using z-score
+#T1_signature_scores <- colMeans(scale(T1_i20_expr), na.rm = TRUE)
+
+#$$$$$$$$$$$$
+## using logistic regression------
+#$$$$$$$$$$$$$
+
+# load the logistic regression model
+load('./objs/metabric_CO130_derived_T1_THR50_i20_logReg_model_Her2_sep.rda')
+Data_T1 <- data.frame(cbind(t(T1_expr), 'RFS' = T1_pheno$Disease.Free.Status))
+Data_T1$RFS <- as.factor(Data_T1$RFS)
+Data_T1 <- Data_T1 %>% mutate(across(-RFS, as.numeric))
+
+# modify the logreg model to remove both AK057319 and F09070
+#i20_logReg_model$coefficients <- i20_logReg_model$coefficients[!(i20_logReg_model$coefficients %in% c('AK057319', 'F09070'))]
+
+#levels(Data_T1$RFS) <- c('longSurv', 'shortSurv')
+# predict using the logistic reg model
+Data_T1$AK057319 <- 0
+Data_T1$F09070 <- 0
+
+T1_pheno$i20_logReg_score <- i20_logReg_model %>% predict(Data_T1 , type = "response")
+
+#&&&&&&&&&&&&&&&&&&
+### determine the best threshold-------
+#&&&&&&&&&&&&&&&&&&
+median_threshold_i20 <- median(T1_signature_scores_i20)
+quantile_threshold_i20 <- quantile(T1_signature_scores_i20, probs = 0.75)  # 75th percentile as an example
+ROC_thr_I20 <- coords(roc(T1_pheno$Disease.Free.Status, T1_pheno$i20_logReg_score, direction = "<"), "best")["threshold"]
+
+#&&&&&&&&&&&&&&&&&&
+### Assign samples to subclass based on i20 expression-------
+#&&&&&&&&&&&&&&&&&&
+T1_pheno$immune_clusters_i20_GSVA <- ifelse(T1_signature_scores_i20 >= median_threshold_i20, "T1_i+", "T1_i-")
+table(T1_pheno$immune_clusters_i20_GSVA)
+T1_pheno$immune_clusters_i20_GSVA <- factor(T1_pheno$immune_clusters_i20_GSVA, levels = c('T1_i-', 'T1_i+'))
+
+T1_pheno$immune_clusters_i20_logReg <- ifelse(T1_pheno$i20_logReg_score >= ROC_thr_I20$threshold, "PQNBC_i-", "PQNBC_i+")
+table(T1_pheno$immune_clusters_i20_logReg)
+T1_pheno$immune_clusters_i20_logReg <- factor(T1_pheno$immune_clusters_i20_logReg, levels = c('PQNBC_i-', 'PQNBC_i+'))
+
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## Keep only the relevant information (Metastasis Event and Time)-----
+T1_pheno_survival <- T1_pheno[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Disease.Free.Status", "Disease.Free..Months.", "Subtype", "ER.Status.By.IHC", "PR.status.by.ihc", "immune_clusters_i20_GSVA", "immune_clusters_i20_logReg")]
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+CoxData_tcga_T1 <- data.frame(T1_pheno_survival)
+
+#############
+# fix the survival information
+CoxData_tcga_T1$Disease.Free.Status <- gsub("\\:.+", "", CoxData_tcga_T1$Disease.Free.Status)
+CoxData_tcga_T1$Overall.Survival.Status <- gsub("\\:.+", "", CoxData_tcga_T1$Overall.Survival.Status)
+
+CoxData_tcga_T1$Disease.Free.Status <- as.numeric(CoxData_tcga_T1$Disease.Free.Status)
+CoxData_tcga_T1$Overall.Survival.Status <- as.numeric(CoxData_tcga_T1$Overall.Survival.Status)
+
+table(CoxData_tcga_T1$Disease.Free.Status)
+table(CoxData_tcga_T1$Overall.Survival.Status)
+
+table(Pheno_tcga$Disease.Free.Status)
+table(Pheno_tcga$Overall.Survival.Status)
+
+CoxData_tcga_T1$Disease.Free..Months. <- as.numeric(CoxData_tcga_T1$Disease.Free..Months.)
+CoxData_tcga_T1$Overall.Survival..Months. <- as.numeric(CoxData_tcga_T1$Overall.Survival..Months.)
+
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## recombine T1 with the rest---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+T1 <- data.frame(T1_immune_clusters_i20_GSVA = T1_pheno$immune_clusters_i20_GSVA,
+                 T1_immune_clusters_i20_logReg = T1_pheno$immune_clusters_i20_logReg,
+                 `Sample.ID` = rownames(T1_pheno))
+
+rownames(T1) <- rownames(T1_pheno)
+
+
+# merge
+Pheno_tcga$`THR clusters`[Pheno_tcga$`THR clusters` == 'T1'] <- NA
+
+
+Pheno_tcga2 <- merge(x = T1, y = Pheno_tcga, by.x = "Sample.ID", by.y = 'Patient.ID', all.y = TRUE)
+
+Pheno_tcga2 <- Pheno_tcga2 %>% 
+  mutate(merged_THR_clusters_i20_GSVA = coalesce(T1_immune_clusters_i20_GSVA,`THR clusters`)) %>%
+  mutate(merged_THR_clusters_i20_logReg = coalesce(T1_immune_clusters_i20_logReg,`THR clusters`))
+  
+Pheno_tcga2$merged_THR_clusters_i20_GSVA <- droplevels(Pheno_tcga2$merged_THR_clusters_i20_GSVA)
+Pheno_tcga2$merged_THR_clusters_i20_logReg <- droplevels(Pheno_tcga2$merged_THR_clusters_i20_logReg)
+
+table(Pheno_tcga2$merged_THR_clusters_i20_GSVA)
+table(Pheno_tcga2$merged_THR_clusters_i20_logReg)
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## survival analysis---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+## Keep only the relevant information (Metastasis Event and Time)
+survival_tcga <- Pheno_tcga2[, c("Overall.Survival.Status", "Overall.Survival..Months.", 
+                                 "Disease.Free.Status", "Disease.Free..Months.", 
+                                 "Subtype", "ER.Status.By.IHC", "PR.status.by.ihc",
+                                 "merged_THR_clusters_i20_GSVA", "merged_THR_clusters_i20_logReg" 
+)] 
+
+#############
+# fix the survival information
+survival_tcga$Disease.Free.Status <- gsub("\\:.+", "", survival_tcga$Disease.Free.Status)
+survival_tcga$Overall.Survival.Status <- gsub("\\:.+", "", survival_tcga$Overall.Survival.Status)
+
+survival_tcga$Disease.Free.Status <- as.numeric(survival_tcga$Disease.Free.Status)
+survival_tcga$Overall.Survival.Status <- as.numeric(survival_tcga$Overall.Survival.Status)
+
+table(survival_tcga$Disease.Free.Status)
+table(survival_tcga$Overall.Survival.Status)
+
+table(Pheno_tcga$Disease.Free.Status)
+table(Pheno_tcga$Overall.Survival.Status)
+
+survival_tcga$Disease.Free..Months. <- as.numeric(survival_tcga$Disease.Free..Months.)
+survival_tcga$Overall.Survival..Months. <- as.numeric(survival_tcga$Overall.Survival..Months.)
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+### OS---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+cluster_colors <- c("#771b9e", "#9e771b", "#66A61E", "#E7298A", "#7570B3", "#D95F02")
+
+Fit_tcga_os_i20_GSVA <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20_GSVA, data = survival_tcga)
+
+png("./figures/CO130_tcga_clusters/CO130_tcga_os_5clusters_HER2sep_10yrs_T1_i20_GSVA.png", width = 2000, height = 2000, res = 300)
+ggsurvplot(Fit_tcga_os_i20_GSVA,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,120),
+           legend.labs = levels(survival_tcga$merged_THR_clusters_i20_GSVA),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
+dev.off()
+
+#&&&&&&&&&
+Fit_tcga_os_i20_logreg <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20_logReg, data = survival_tcga)
+
+png("./figures/CO130_tcga_clusters/CO130_tcga_os_5clusters_HER2sep_10yrs_T1_i20_logreg.png", width = 2000, height = 2000, res = 300)
+ggsurvplot(Fit_tcga_os_i20_logreg,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,120),
+           legend.labs = levels(survival_tcga$merged_THR_clusters_i20_logReg),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
+dev.off()
+
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+### RFS---------
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Fit_tcga_dfs_i20_GSVA <- survfit(Surv(Disease.Free..Months., Disease.Free.Status) ~ merged_THR_clusters_i20_GSVA, data = survival_tcga)
+
+png("./figures/CO130_tcga_clusters/CO130_tcga_rfs_5clusters_HER2sep_10yrs_T1_i20_GSVA.png", width = 2000, height = 2000, res = 300)
+ggsurvplot(Fit_tcga_dfs_i20_GSVA,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,120),
+           legend.labs = levels(survival_tcga$merged_THR_clusters_i20_GSVA),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
+dev.off()
+
+#&&&&&&&&&&&&&
+Fit_tcga_dfs_i20_logreg <- survfit(Surv(Disease.Free..Months., Disease.Free.Status) ~ merged_THR_clusters_i20_logReg, data = survival_tcga)
+
+png("./figures/CO130_tcga_clusters/CO130_tcga_rfs_5clusters_HER2sep_10yrs_T1_i20_logreg.png", width = 2000, height = 2000, res = 300)
+ggsurvplot(Fit_tcga_dfs_i20_logreg,
+           risk.table = FALSE,
+           pval = TRUE,
+           palette = cluster_colors,
+           xlim = c(0,120),
+           legend.labs = levels(survival_tcga$merged_THR_clusters_i20_logReg),
+           legend.title	= '',
+           pval.size = 10,
+           break.x.by = 40,
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
+           risk.table.y.text.col = FALSE,
+           risk.table.y.text = FALSE, 
+           #title = 'THR70 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
+dev.off()

@@ -199,13 +199,16 @@ clusters_metabric <- as.data.frame(cbind(t(Expr_metabric_refAll_heatmap),
 
 table(clusters_metabric$`THR clusters`)
 
+clusters_metabric$`THR clusters` <- as.factor(clusters_metabric$`THR clusters`)
+levels(clusters_metabric$`THR clusters`) <- c('E1', 'E2', 'E3', 'T1', 'T2')
+
 # add the cluster info to the phenotype table
 all(rownames(clusters_metabric) == rownames(Pheno_metabric))
 Pheno_metabric$`THR clusters` <- clusters_metabric$`THR clusters`
 
 # add the cluster info to the Ann dataframe and re-plot the heatmap
 all(rownames(clusters_metabric) == rownames(AnnAll_metabric))
-AnnAll_metabric$`THR clusters` <- as.factor(paste0('c', clusters_metabric$`THR clusters`))
+AnnAll_metabric$`THR clusters` <- as.factor(clusters_metabric$`THR clusters`)
 table(AnnAll_metabric$`THR clusters`)
 
 # re-order the annotation dataframe then the expression matrix by cluster
@@ -258,7 +261,7 @@ survival_metabric <- Pheno_metabric[, c("Overall.Survival.Status", "Overall.Surv
                                         "X3.Gene.classifier.subtype", "THR clusters")] 
 
 survival_metabric$`THR clusters` <- as.factor(survival_metabric$`THR clusters`)
-levels(survival_metabric$`THR clusters`) <- c('E1', 'E3', 'E2', 'T1', 'T2')
+#levels(survival_metabric$`THR clusters`) <- c('E1', 'E2', 'E3', 'T1', 'T2')
 #survival_metabric$`THR clusters` <- factor(survival_metabric$`THR clusters`, levels = c('E1', 'E2a', 'E2b', 'E3', 'PNBC'))
 # OS
 Fit_metabric_os <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ as.factor(`THR clusters`), data = survival_metabric)
@@ -280,7 +283,7 @@ cluster_colors <- as.vector(ann_colors$`THR clusters`)
 #cluster_colors <- as.vector(ann_colors$`THR clusters`)
 
 
-pdf("./figures/CO130_metabric_clusters/CO130_metabric_os_5clusters_20yrs.pdf", width = 10, height = 8, onefile = F)
+png("./figures/CO130_metabric_clusters/CO130_metabric_os_5clusters_20yrs.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_os,
            risk.table = FALSE,
            pval = TRUE,
@@ -288,13 +291,25 @@ ggsurvplot(Fit_metabric_os,
            xlim = c(0,240),
            legend.labs = levels(survival_metabric$`THR clusters`),
            legend.title	= '',
-           pval.size = 12,
+           pval.size = 10,
            break.x.by = 40,
-           ggtheme = theme_survminer(base_size = 18, font.x = c(18, 'bold.italic', 'black'), font.y = c(18, 'bold.italic', 'black'), font.tickslab = c(18, 'plain', 'black'), font.legend = c(18, 'bold', 'black')),
+           ggtheme = theme(axis.line = element_line(colour = "black"),
+                           panel.grid.major = element_line(colour = "grey90"),
+                           panel.grid.minor = element_line(colour = "grey90"),
+                           panel.border = element_blank(),
+                           panel.background = element_blank(),
+                           legend.spacing.x = unit(0.5, "cm"),
+                           legend.spacing.y = unit(0.5, "cm"),
+                           legend.key.height = unit(1.3, "lines"),
+                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+           ), 
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
-           #title = 'THR70 clusters and OS'
-)
+           #title = 'THR70 clusters and RFS'
+) + guides(
+  colour = guide_legend(ncol = 3))
 dev.off()
 
 

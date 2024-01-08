@@ -219,17 +219,7 @@ os_surv_obj <- Surv(CoxData_tcga$`Overall.Survival..Months.`, CoxData_tcga$`Over
 
 # Fit the survival curves
 fit_os_bestcutoff_tertiles_prob <- survfit(os_surv_obj ~ groups_prob_os)
-tiff("./figures/CO130_tcga/CO130_tcga_os_bestCutoff_tertiles_prob.tiff", width = 3000, height = 3000, res = 300)
-ggsurvplot(fit_os_bestcutoff_tertiles_prob, 
-           data = CoxData_tcga, 
-           risk.table = TRUE, pval = TRUE,
-           ggtheme = theme_survminer(base_size = 16, font.x = c(16, 'bold.italic', 'black'), font.y = c(16, 'bold.italic', 'black'), font.tickslab = c(16, 'plain', 'black'), font.legend = c(16, 'bold', 'black')),
-           legend.labs = c('Q1', 'Q2', 'Q3')
-)
-dev.off()
-
-# 10 years
-tiff("./figures/CO130_tcga/CO130_tcga_os_bestCutoff_tertiles_prob_10yrs.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/CO130_tcga_prognostic/CO130_tcga_os_bestCutoff_tertiles_prob.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(fit_os_bestcutoff_tertiles_prob, 
            data = CoxData_tcga, 
            risk.table = TRUE, pval = TRUE,
@@ -239,6 +229,7 @@ ggsurvplot(fit_os_bestcutoff_tertiles_prob,
            legend.labs = c('Q1', 'Q2', 'Q3')
 )
 dev.off()
+
 
 # Fit the Cox proportional hazards model using best cut-offs
 cox_fit_os_bestcutoff_tertiles_prob <- coxph(os_surv_obj ~ as.factor(groups_prob_os), data = CoxData_tcga)
@@ -281,17 +272,10 @@ dfs_surv_obj <- Surv(CoxData_tcga$Disease.Free..Months., CoxData_tcga$Disease.Fr
 
 # Fit the survival curves
 fit_dfs_bestcutoff_tertiles_prob <- survfit(dfs_surv_obj ~ groups_prob_dfs)
-tiff("./figures/CO130_tcga/CO130_tcga_dfs_bestCutoff_tertiles_prob.tiff", width = 3000, height = 3000, res = 300)
-ggsurvplot(fit_dfs_bestcutoff_tertiles_prob, 
-           data = CoxData_tcga, 
-           risk.table = TRUE, pval = TRUE,
-           ggtheme = theme_survminer(base_size = 16, font.x = c(16, 'bold.italic', 'black'), font.y = c(16, 'bold.italic', 'black'), font.tickslab = c(16, 'plain', 'black'), font.legend = c(16, 'bold', 'black')),
-           legend.labs = c('Q1', 'Q2', 'Q3')
-)
-dev.off()
+
 
 # 10yrs
-tiff("./figures/CO130_tcga/CO130_tcga_dfs_bestCutoff_tertiles_prob_10yrs.tiff", width = 3000, height = 3000, res = 300)
+tiff("./figures/CO130_tcga_prognostic/CO130_tcga_dfs_bestCutoff_tertiles_prob_10yrs.tiff", width = 3000, height = 3000, res = 300)
 ggsurvplot(fit_dfs_bestcutoff_tertiles_prob, 
            data = CoxData_tcga, 
            risk.table = TRUE, pval = TRUE,
