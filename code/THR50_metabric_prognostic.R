@@ -119,8 +119,26 @@ MCC_Train_THR50
 
 ##########################
 ## Keep only the relevant information (Metastasis Event and Time)
-Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype")], 
+Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overall.Survival..Months.", "Relapse.Free.Status", "Relapse.Free.Status..Months.", "Pam50...Claudin.low.subtype", "ER.status.measured.by.IHC", "X3.Gene.classifier.subtype", "Tumor.Stage", "Age.at.Diagnosis", "Neoplasm.Histologic.Grade")], 
                                   Train_prob_THR50, Train_predClasses_THR50)
+
+# fix tumor stage
+table(Phenotype_metabric$Tumor.Stage)
+Phenotype_metabric$stage <- as.factor(Phenotype_metabric$Tumor.Stage)
+Phenotype_metabric$stage <- factor(Phenotype_metabric$stage, levels= c('0', '1', '2', '3', '4'))
+table(Phenotype_metabric$stage)
+
+# fix grade
+table(Phenotype_metabric$Neoplasm.Histologic.Grade)
+Phenotype_metabric$grade <- as.factor(Phenotype_metabric$Neoplasm.Histologic.Grade)
+Phenotype_metabric$grade <- factor(Phenotype_metabric$grade, levels= c('1', '2', '3'))
+table(Phenotype_metabric$grade)
+
+# fix age
+summary(Phenotype_metabric$Age.at.Diagnosis)
+Phenotype_metabric$age <- as.numeric(Phenotype_metabric$Age.at.Diagnosis)
+summary(Phenotype_metabric$age)
+
 
 # create a merged pdata and Z-scores object
 CoxData_metabric <- data.frame(Phenotype_metabric)
@@ -399,6 +417,10 @@ ggsurvplot(Fit_sig_metabric_os_THR50,
            )
 dev.off()
 
+# multivariate COX
+Fit_sig_metabric_os_THR50_coxph_class_multi <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50 + age + stage + grade, data = CoxData_metabric)
+summary(Fit_sig_metabric_os_THR50_coxph_class_multi)
+
 ########
 # by quartiles
 tiff("./figures/THR50/metabric/THR50_metabric_os_quartiles.tiff", width = 2000, height = 2000, res = 350)
@@ -517,6 +539,9 @@ ggsurvplot(Fit_sig_metabric_RFS_THR50,
            )
 dev.off()
 
+# multivariate COX
+Fit_sig_metabric_rfs_THR50_coxph_class_multi <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Train_predClasses_THR50 + age + stage + grade, data = CoxData_metabric)
+summary(Fit_sig_metabric_rfs_THR50_coxph_class_multi)
 
 ########
 # by quartiles

@@ -114,7 +114,7 @@ heat_metabric <- pheatmap(Expr_metabric_refAll_heatmap,
                           fontsize = 7,
                           #fontsize_col = 3,
                           fontsize_row = 10,
-                          silent = TRUE,
+                          silent = F,
                           cex = 1,
                           cutree_cols = 5,
                           cutree_rows = 5,
@@ -899,6 +899,7 @@ ggsurvplot(Fit_metabric_os_THR70_I20_2,
 dev.off()
 
 ## RFS: 
+
 png("./figures/T1_DE_THR70_RFS/metabric_RFS_5clusters_THR70_I20_merged_20yrs_E2merged.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_RFS_THR70_I20_2,
            risk.table = FALSE,
@@ -927,6 +928,7 @@ ggsurvplot(Fit_metabric_RFS_THR70_I20_2,
            ) + guides(
              colour = guide_legend(ncol = 2))
 dev.off()
+
 
 
 ##########################################################################################

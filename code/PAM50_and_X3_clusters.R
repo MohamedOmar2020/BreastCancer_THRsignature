@@ -315,6 +315,17 @@ ggsurvplot(Fit_metabric_rfs_PAM50original,
              colour = guide_legend(ncol = 2))
 dev.off()
 
+# RFS COXPH
+Fit_metabric_rfs_PAM50original <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Pam50...Claudin.low.subtype, data = survival_metabric)
+
+survival_metabric_cox <- survival_metabric
+survival_metabric_cox$Pam50...Claudin.low.subtype <- factor(survival_metabric_cox$Pam50...Claudin.low.subtype, levels = c('LumA', 'LumB', 'claudin-low', 'Basal', 'Her2'))
+Fit_metabric_rfs_PAM50original_cox <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ Pam50...Claudin.low.subtype, data = survival_metabric_cox)
+summary(Fit_metabric_rfs_PAM50original_cox)
+
+
+
+#####
 # 150 months
 png("./figures/logreg/PAM50_clusters/metabric_rfs_PAM50original_150.png", width = 2000, height = 2000, res = 350)
 ggsurvplot(Fit_metabric_rfs_PAM50original,
