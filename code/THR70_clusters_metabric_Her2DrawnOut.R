@@ -24,6 +24,7 @@ library(tidyverse)
 library(pheatmap)
 library(readxl)
 library(GSVA)
+
 #################
 # THR signature --------------
 #################
@@ -296,64 +297,64 @@ cluster_colors <- as.vector(ann_colors$`THR clusters`)
 
 #names(ann_colors$`THR clusters`) <- levels(survival_metabric$`THR clusters`)
 #cluster_colors <- as.vector(ann_colors$`THR clusters`)
-png("./figures/THR70_metabric_clusters/THR70_metabric_os_5clusters_20yrs_Her2_DrawnOut_2.png", width = 2000, height = 2000, res = 350)
-ggsurvplot(Fit_metabric_os,
-           risk.table = FALSE,
-           pval = TRUE,
-           palette = cluster_colors,
-           xlim = c(0,240),
-           legend.labs = levels(survival_metabric$`THR clusters`),
-           legend.title	= '',
-           pval.size = 10,
-           break.x.by = 40,
-           ggtheme = theme(axis.line = element_line(colour = "black"),
-                           panel.grid.major = element_line(colour = "grey90"),
-                           panel.grid.minor = element_line(colour = "grey90"),
-                           panel.border = element_blank(),
-                           panel.background = element_blank(),
-                           legend.spacing.x = unit(0.5, "cm"),
-                           legend.spacing.y = unit(0.5, "cm"),
-                           legend.key.height = unit(1.3, "lines"),
-                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
-                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
-                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
-           ), 
-           risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, 
-           #title = 'THR70 clusters and RFS'
-) + guides(
-  colour = guide_legend(ncol = 3))
-dev.off()
-
-# plot RFS
-png("./figures/THR70_metabric_clusters/THR70_metabric_rfs_5clusters_20yrs_Her2_DrawnOut_2.png", width = 2000, height = 2000, res = 350)
-ggsurvplot(Fit_metabric_RFS,
-           risk.table = FALSE,
-           pval = TRUE,
-           palette = cluster_colors,
-           xlim = c(0,240),
-           legend.labs = levels(survival_metabric$`THR clusters`),
-           legend.title	= '',
-           pval.size = 10,
-           break.x.by = 40,
-           ggtheme = theme(axis.line = element_line(colour = "black"),
-                           panel.grid.major = element_line(colour = "grey90"),
-                           panel.grid.minor = element_line(colour = "grey90"),
-                           panel.border = element_blank(),
-                           panel.background = element_blank(),
-                           legend.spacing.x = unit(0.5, "cm"),
-                           legend.spacing.y = unit(0.5, "cm"),
-                           legend.key.height = unit(1.3, "lines"),
-                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
-                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
-                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
-           ), 
-           risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, 
-           #title = 'THR70 clusters and RFS'
-) + guides(
-  colour = guide_legend(ncol = 3))
-dev.off()
+# png("./figures/THR70_metabric_clusters/THR70_metabric_os_5clusters_20yrs_Her2_DrawnOut_2.png", width = 2000, height = 2000, res = 350)
+# ggsurvplot(Fit_metabric_os,
+#            risk.table = FALSE,
+#            pval = TRUE,
+#            palette = cluster_colors,
+#            xlim = c(0,240),
+#            legend.labs = levels(survival_metabric$`THR clusters`),
+#            legend.title	= '',
+#            pval.size = 10,
+#            break.x.by = 40,
+#            ggtheme = theme(axis.line = element_line(colour = "black"),
+#                            panel.grid.major = element_line(colour = "grey90"),
+#                            panel.grid.minor = element_line(colour = "grey90"),
+#                            panel.border = element_blank(),
+#                            panel.background = element_blank(),
+#                            legend.spacing.x = unit(0.5, "cm"),
+#                            legend.spacing.y = unit(0.5, "cm"),
+#                            legend.key.height = unit(1.3, "lines"),
+#                            axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+#                            axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+#                            legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+#            ), 
+#            risk.table.y.text.col = FALSE,
+#            risk.table.y.text = FALSE, 
+#            #title = 'THR70 clusters and RFS'
+# ) + guides(
+#   colour = guide_legend(ncol = 3))
+# dev.off()
+# 
+# # plot RFS
+# png("./figures/THR70_metabric_clusters/THR70_metabric_rfs_5clusters_20yrs_Her2_DrawnOut_2.png", width = 2000, height = 2000, res = 350)
+# ggsurvplot(Fit_metabric_RFS,
+#            risk.table = FALSE,
+#            pval = TRUE,
+#            palette = cluster_colors,
+#            xlim = c(0,240),
+#            legend.labs = levels(survival_metabric$`THR clusters`),
+#            legend.title	= '',
+#            pval.size = 10,
+#            break.x.by = 40,
+#            ggtheme = theme(axis.line = element_line(colour = "black"),
+#                            panel.grid.major = element_line(colour = "grey90"),
+#                            panel.grid.minor = element_line(colour = "grey90"),
+#                            panel.border = element_blank(),
+#                            panel.background = element_blank(),
+#                            legend.spacing.x = unit(0.5, "cm"),
+#                            legend.spacing.y = unit(0.5, "cm"),
+#                            legend.key.height = unit(1.3, "lines"),
+#                            axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+#                            axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+#                            legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+#            ), 
+#            risk.table.y.text.col = FALSE,
+#            risk.table.y.text = FALSE, 
+#            #title = 'THR70 clusters and RFS'
+# ) + guides(
+#   colour = guide_legend(ncol = 3))
+# dev.off()
 
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 # Divide T1 using immune signatures ------------------------
@@ -375,7 +376,7 @@ i20 <- read_xlsx("./figures/c3_DE_THR50_RFS/THR50_c3_longVSshortSurv_DE.xlsx")$g
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 ## Load the i45 signature ---------
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-load('objs/THR56T1sep_i_genesets.rda')
+#load('objs/THR56T1sep_i_genesets.rda')
 
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 ## use I20 to separate T1 into two clusters
@@ -387,20 +388,20 @@ load('objs/THR56T1sep_i_genesets.rda')
 i20_filt <- intersect(i20, rownames(Expr_metabric_refAll))
 T1_i20_expr <- T1_expr[i20_filt, ]
 
-i45_filt <- intersect(i30p15, rownames(Expr_metabric_refAll))
-T1_i45_expr <- T1_expr[i45_filt, ]
+#i45_filt <- intersect(i30p15, rownames(Expr_metabric_refAll))
+#T1_i45_expr <- T1_expr[i45_filt, ]
 
 # using the average expression
 #T1_signature_scores <- colMeans(T1_i20_expr, na.rm = TRUE)  # Use colMeans since samples are in columns
 
 # using GSVA
-gene_sets <- list(i20 = rownames(T1_i20_expr), i45 = rownames(T1_i45_expr))
-T1_signature_scores <- gsva(T1_expr, gene_sets, method = "ssgsea")
-T1_signature_scores_i20 <- as.vector(T1_signature_scores[1, ])
-T1_signature_scores_i45 <- as.vector(T1_signature_scores[2, ])
+#gene_sets <- list(i20 = rownames(T1_i20_expr), i45 = rownames(T1_i45_expr))
+#T1_signature_scores <- gsva(T1_expr, gene_sets, method = "ssgsea")
+#T1_signature_scores_i20 <- as.vector(T1_signature_scores[1, ])
+#T1_signature_scores_i45 <- as.vector(T1_signature_scores[2, ])
 
-T1_pheno$i20_score <- T1_signature_scores_i20
-T1_pheno$i45_score <- T1_signature_scores_i45
+#T1_pheno$i20_score <- T1_signature_scores_i20
+#T1_pheno$i45_score <- T1_signature_scores_i45
 
 # Perform PCA on the expression data of the i20 genes
 #pca_result <- prcomp(t(T1_i20_expr), scale. = TRUE)
@@ -421,11 +422,11 @@ T1_pheno$i20_logReg_score <- i20_logReg_model %>% predict(Data_T1 , type = "resp
 #&&&&&&&&&&&&&&&&&&
 ### determine the best threshold-------
 #&&&&&&&&&&&&&&&&&&
-median_threshold_i20 <- median(T1_signature_scores_i20)
-median_threshold_i45 <- median(T1_signature_scores_i45)
-
-quantile_threshold_i20 <- quantile(T1_signature_scores_i20, probs = 0.75)  # 75th percentile as an example
-quantile_threshold_i45 <- quantile(T1_signature_scores_i45, probs = 0.75)  # 75th percentile as an example
+# median_threshold_i20 <- median(T1_signature_scores_i20)
+# median_threshold_i45 <- median(T1_signature_scores_i45)
+# 
+# quantile_threshold_i20 <- quantile(T1_signature_scores_i20, probs = 0.75)  # 75th percentile as an example
+# quantile_threshold_i45 <- quantile(T1_signature_scores_i45, probs = 0.75)  # 75th percentile as an example
 
 ROC_thr_I20 <- coords(roc(T1_pheno$Relapse.Free.Status, T1_pheno$i20_logReg_score, direction = "<"), "best")["threshold"]
 
@@ -438,13 +439,13 @@ save(i20_logReg_model, ROC_thr_I20, file = './objs/metabric_THR70_derived_T1_THR
 #&&&&&&&&&&&&&&&&&&
 ### Assign samples to subclass based on i20 expression-------
 #&&&&&&&&&&&&&&&&&&
-T1_pheno$immune_clusters_i20 <- ifelse(T1_signature_scores_i20 >= median_threshold_i20, "PQNBC_i+", "PQNBC_i-")
-table(T1_pheno$immune_clusters_i20)
-T1_pheno$immune_clusters_i20 <- factor(T1_pheno$immune_clusters_i20, levels = c('PQNBC_i-', 'PQNBC_i+'))
+#T1_pheno$immune_clusters_i20 <- ifelse(T1_signature_scores_i20 >= median_threshold_i20, "PQNBC_i+", "PQNBC_i-")
+#table(T1_pheno$immune_clusters_i20)
+#T1_pheno$immune_clusters_i20 <- factor(T1_pheno$immune_clusters_i20, levels = c('PQNBC_i-', 'PQNBC_i+'))
 
-T1_pheno$immune_clusters_i45 <- ifelse(T1_signature_scores_i45 >= median_threshold_i45, "PQNBC_i+", "PQNBC_i-")
-table(T1_pheno$immune_clusters_i45)
-T1_pheno$immune_clusters_i45 <- factor(T1_pheno$immune_clusters_i45, levels = c('PQNBC_i-', 'PQNBC_i+'))
+#T1_pheno$immune_clusters_i45 <- ifelse(T1_signature_scores_i45 >= median_threshold_i45, "PQNBC_i+", "PQNBC_i-")
+#table(T1_pheno$immune_clusters_i45)
+#T1_pheno$immune_clusters_i45 <- factor(T1_pheno$immune_clusters_i45, levels = c('PQNBC_i-', 'PQNBC_i+'))
 
 T1_pheno$immune_clusters_i20_logReg <- ifelse(T1_pheno$i20_logReg_score >= ROC_thr_I20$threshold, "PQNBC_i-", "PQNBC_i+")
 table(T1_pheno$immune_clusters_i20_logReg)
@@ -468,14 +469,14 @@ CoxData_metabric_T1 <- data.frame(T1_pheno_survival)
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 ### OS------
-Fit_sig_metabric_os_T1_i20 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ immune_clusters_i20, data = CoxData_metabric_T1)
-Fit_sig_metabric_os_T1_i45 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ immune_clusters_i45, data = CoxData_metabric_T1)
+#Fit_sig_metabric_os_T1_i20 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ immune_clusters_i20, data = CoxData_metabric_T1)
+#Fit_sig_metabric_os_T1_i45 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ immune_clusters_i45, data = CoxData_metabric_T1)
 Fit_sig_metabric_os_T1_i20_logReg <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ immune_clusters_i20_logReg, data = CoxData_metabric_T1)
 
 
 ### RFS-----
-Fit_sig_metabric_RFS_T1_i20 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ immune_clusters_i20, data = CoxData_metabric_T1)
-Fit_sig_metabric_RFS_T1_i45 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ immune_clusters_i45, data = CoxData_metabric_T1)
+#Fit_sig_metabric_RFS_T1_i20 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ immune_clusters_i20, data = CoxData_metabric_T1)
+#Fit_sig_metabric_RFS_T1_i45 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ immune_clusters_i45, data = CoxData_metabric_T1)
 Fit_sig_metabric_RFS_T1_i20_logReg <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ immune_clusters_i20_logReg, data = CoxData_metabric_T1)
 
 
@@ -498,13 +499,13 @@ Pheno_metabric2 <- merge(x = T1, y = Pheno_metabric, by = "Sample.ID", all.y = T
 Pheno_metabric2 <- Pheno_metabric2 %>% 
   mutate(merged_THR_clusters_i20_logReg = coalesce(T1_immune_clusters_i20_logReg,`THR clusters`))
 
-Pheno_metabric2$merged_THR_clusters_i20 <- droplevels(Pheno_metabric2$merged_THR_clusters_i20)
+#Pheno_metabric2$merged_THR_clusters_i20 <- droplevels(Pheno_metabric2$merged_THR_clusters_i20)
 Pheno_metabric2$merged_THR_clusters_i20_logReg <- droplevels(Pheno_metabric2$merged_THR_clusters_i20_logReg)
-Pheno_metabric2$merged_THR_clusters_i45 <- droplevels(Pheno_metabric2$merged_THR_clusters_i45)
+#Pheno_metabric2$merged_THR_clusters_i45 <- droplevels(Pheno_metabric2$merged_THR_clusters_i45)
 
-table(Pheno_metabric2$merged_THR_clusters_i20)
+#table(Pheno_metabric2$merged_THR_clusters_i20)
 table(Pheno_metabric2$merged_THR_clusters_i20_logReg)
-table(Pheno_metabric2$merged_THR_clusters_i45)
+#table(Pheno_metabric2$merged_THR_clusters_i45)
 
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 ## survival analysis---------
@@ -526,48 +527,48 @@ survival_metabric <- Pheno_metabric2[, c("Overall.Survival.Status", "Overall.Sur
 
 cluster_colors <- c("#1960b2", "#DF271F", "#66A61E", "#CD4174", "#A253A2", "#9D696C", "#1B9E77")
 
-Fit_metabric_os_i20 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20, data = survival_metabric)
-
-png("./figures/THR70_metabric_clusters/THR70_metabric_os_5clusters_HER2_DrawnOut_10yrs_T1_i20_2.png", width = 2000, height = 2000, res = 300)
-ggsurvplot(Fit_metabric_os_i20,
-           risk.table = FALSE,
-           pval = TRUE,
-           palette = cluster_colors,
-           xlim = c(0,240),
-           legend.labs = levels(survival_metabric$merged_THR_clusters_i20),
-           legend.title	= '',
-           pval.size = 10,
-           break.x.by = 40,
-           ggtheme = theme(axis.line = element_line(colour = "black"),
-                           panel.grid.major = element_line(colour = "grey90"),
-                           panel.grid.minor = element_line(colour = "grey90"),
-                           panel.border = element_blank(),
-                           panel.background = element_blank(),
-                           legend.spacing.x = unit(0.5, "cm"),
-                           legend.spacing.y = unit(0.5, "cm"),
-                           legend.key.height = unit(1.3, "lines"),
-                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
-                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
-                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
-           ), 
-           risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, 
-           #title = 'THR70 clusters and RFS'
-) + guides(
-  colour = guide_legend(ncol = 3))
-dev.off()
-
-# Cox
-cox_metabric <- survival_metabric
-cox_metabric$merged_THR_clusters_i20 <- factor(cox_metabric$merged_THR_clusters_i20, levels = c('E3', 'E2', 'E1', 'HER2+', 'PQNBC_i+', 'PQNBC_i-')) 
-cox_Fit_metabric_os_THR70_with_i20 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20, data = cox_metabric)
-summary(cox_Fit_metabric_os_THR70_with_i20)
+# Fit_metabric_os_i20 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20, data = survival_metabric)
+# 
+# png("./figures/THR70_metabric_clusters/THR70_metabric_os_5clusters_HER2_DrawnOut_10yrs_T1_i20_2.png", width = 2000, height = 2000, res = 300)
+# ggsurvplot(Fit_metabric_os_i20,
+#            risk.table = FALSE,
+#            pval = TRUE,
+#            palette = cluster_colors,
+#            xlim = c(0,240),
+#            legend.labs = levels(survival_metabric$merged_THR_clusters_i20),
+#            legend.title	= '',
+#            pval.size = 10,
+#            break.x.by = 40,
+#            ggtheme = theme(axis.line = element_line(colour = "black"),
+#                            panel.grid.major = element_line(colour = "grey90"),
+#                            panel.grid.minor = element_line(colour = "grey90"),
+#                            panel.border = element_blank(),
+#                            panel.background = element_blank(),
+#                            legend.spacing.x = unit(0.5, "cm"),
+#                            legend.spacing.y = unit(0.5, "cm"),
+#                            legend.key.height = unit(1.3, "lines"),
+#                            axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
+#                            axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
+#                            legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
+#            ), 
+#            risk.table.y.text.col = FALSE,
+#            risk.table.y.text = FALSE, 
+#            #title = 'THR70 clusters and RFS'
+# ) + guides(
+#   colour = guide_legend(ncol = 3))
+# dev.off()
+# 
+# # Cox
+# cox_metabric <- survival_metabric
+# cox_metabric$merged_THR_clusters_i20 <- factor(cox_metabric$merged_THR_clusters_i20, levels = c('E3', 'E2', 'E1', 'HER2+', 'PQNBC_i+', 'PQNBC_i-')) 
+# cox_Fit_metabric_os_THR70_with_i20 <- coxph(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20, data = cox_metabric)
+# summary(cox_Fit_metabric_os_THR70_with_i20)
 
 ##################
 Fit_metabric_os_i20_logReg <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ merged_THR_clusters_i20_logReg, data = survival_metabric)
 
 png("./figures/THR70_metabric_clusters/THR70_metabric_os_5clusters_HER2_DrawnOut_10yrs_T1_i20_logReg.png", width = 2000, height = 2000, res = 300)
-ggsurvplot(Fit_metabric_os_i20_logReg,
+gg <- ggsurvplot(Fit_metabric_os_i20_logReg,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
@@ -591,7 +592,9 @@ ggsurvplot(Fit_metabric_os_i20_logReg,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR70 clusters and RFS'
-) + guides(
+           ) 
+           
+gg$plot + guides(
   colour = guide_legend(ncol = 3))
 dev.off()
 
@@ -605,46 +608,13 @@ summary(cox_Fit_metabric_os_THR70_with_i20_logReg)
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 ### RFS---------
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-Fit_metabric_rfs_i20 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ merged_THR_clusters_i20, data = survival_metabric)
 
-png("./figures/THR70_metabric_clusters/THR70_metabric_rfs_5clusters_HER2_DrawnOut_10yrs_T1_i20_2.png", width = 2000, height = 2000, res = 300)
-ggsurvplot(Fit_metabric_rfs_i20,
-           risk.table = FALSE,
-           pval = TRUE,
-           palette = cluster_colors,
-           xlim = c(0,240),
-           legend.labs = levels(survival_metabric$merged_THR_clusters_i20),
-           legend.title	= '',
-           pval.size = 10,
-           break.x.by = 40,
-           ggtheme = theme(axis.line = element_line(colour = "black"),
-                           panel.grid.major = element_line(colour = "grey90"),
-                           panel.grid.minor = element_line(colour = "grey90"),
-                           panel.border = element_blank(),
-                           panel.background = element_blank(),
-                           legend.spacing.x = unit(0.5, "cm"),
-                           legend.spacing.y = unit(0.5, "cm"),
-                           legend.key.height = unit(1.3, "lines"),
-                           axis.title = element_text(size = 14, face = 'bold.italic', color = 'black'),
-                           axis.text = element_text(size = 12, face = 'bold.italic', color = 'black'), 
-                           legend.text = element_text(size = 16, face = 'bold.italic', color = 'black'),
-           ), 
-           risk.table.y.text.col = FALSE,
-           risk.table.y.text = FALSE, 
-           #title = 'THR70 clusters and RFS'
-) + guides(
-  colour = guide_legend(ncol = 3))
-dev.off()
+cluster_colors <- c("#4DAF4A", "#E41A1C", "#FFD700", "#377EB8", "#984EA3", "#FF7F00")
 
-# Cox
-cox_Fit_metabric_rfs_THR70_with_i20 <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ merged_THR_clusters_i20, data = cox_metabric)
-summary(cox_Fit_metabric_rfs_THR70_with_i20)
-
-#&&&&&&&&&&&&
 # i20_logReg
 Fit_metabric_rfs_i20_logReg <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ merged_THR_clusters_i20_logReg, data = survival_metabric)
 png("./figures/THR70_metabric_clusters/THR70_metabric_rfs_5clusters_HER2_DrawnOut_10yrs_T1_i20_logReg.png", width = 2000, height = 2000, res = 300)
-ggsurvplot(Fit_metabric_rfs_i20_logReg,
+gg <- ggsurvplot(Fit_metabric_rfs_i20_logReg,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
@@ -668,8 +638,10 @@ ggsurvplot(Fit_metabric_rfs_i20_logReg,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR70 clusters and RFS'
-) + guides(
-  colour = guide_legend(ncol = 3))
+)
+gg$plot + guides(
+ colour = guide_legend(ncol = 3))
+
 dev.off()
 
 

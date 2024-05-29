@@ -126,6 +126,7 @@ Phenotype_metabric <- cbind(Pheno_metabric[, c("Overall.Survival.Status", "Overa
 table(Phenotype_metabric$Tumor.Stage)
 Phenotype_metabric$stage <- as.factor(Phenotype_metabric$Tumor.Stage)
 Phenotype_metabric$stage <- factor(Phenotype_metabric$stage, levels= c('0', '1', '2', '3', '4'))
+levels(Phenotype_metabric$stage) <- c('0/1', '0/1', '2', '3', '4')
 table(Phenotype_metabric$stage)
 
 # fix grade
