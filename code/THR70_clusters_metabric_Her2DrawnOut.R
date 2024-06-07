@@ -609,7 +609,7 @@ summary(cox_Fit_metabric_os_THR70_with_i20_logReg)
 ### RFS---------
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-cluster_colors <- c("#4DAF4A", "#E41A1C", "#FFD700", "#377EB8", "#984EA3", "#FF7F00")
+cluster_colors <- c("#4DAF4A", "#E41A1C", "black", "#377EB8", "#984EA3", "#FF7F00")
 
 # i20_logReg
 Fit_metabric_rfs_i20_logReg <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ merged_THR_clusters_i20_logReg, data = survival_metabric)

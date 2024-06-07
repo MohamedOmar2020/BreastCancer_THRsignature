@@ -236,6 +236,42 @@ CoxData_metabric_PAM_Q1vsQ5_THR50 <- CoxData_metabric_PAM %>%
   filter(metabric_prob_THR50_quintiles %in% c('1', '5'))
 
 
+
+###############################
+# visualize the distribution of the signature's risk scores across PAM50 groups
+###############################
+
+data_to_plot_PAM50 <- CoxData_metabric_PAM %>%
+  select(Train_prob_THR50, Pam50...Claudin.low.subtype) %>%
+  dplyr::rename("PAM50 Groups" = Pam50...Claudin.low.subtype)
+
+# Plotting the distribution of THR50 scores across PAM50 subtypes
+tiff("./figures/THR50/metabric/THR50_Score_Distribution_by_PAM50_Subtype.tiff", width = 2000, height = 1600, res = 300)
+ggplot(data_to_plot_PAM50, aes(x = Train_prob_THR50, fill = `PAM50 Groups`)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 30, alpha = 0.5, position = "identity") +
+  geom_density(alpha = 0.7, adjust = 1, color = "black", size = 1) +
+  facet_wrap(~ `PAM50 Groups`, scales = "free_y") +
+  labs(
+    #title = "Distribution of THR50 Scores Across PAM50 Subtypes",
+       x = "THR-50 Risk Score",
+       y = "Density",
+       legend.title = 'PAM50 Groups'
+       ) +
+  xlim(0.1, 1.05) + # Adjust x-axis limits to include slightly beyond the maximum value
+  theme_minimal() +
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(size = 10, face = "bold"),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        strip.text.x = element_text(size = 12, face = "bold"))
+dev.off()
+
+
+#############################
+# fit COX
+#############################
+
 # os: all
 Fit_sig_metabric_os_THR50_PAM <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ Train_predClasses_THR50 + Pam50...Claudin.low.subtype, data = CoxData_metabric_PAM)
 
@@ -343,6 +379,39 @@ Fit_sig_metabric_rfs_THR50_Q1vsQ4_X3 <- survfit(Surv(Relapse.Free.Status..Months
 
 # rfs: quintiles: Q1 vs Q5
 Fit_sig_metabric_rfs_THR50_Q1vsQ5_X3 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ metabric_prob_THR50_quintiles + X3.Gene.classifier.subtype, data = CoxData_metabric_Q1vsQ5_THR50)
+
+
+###############################
+# visualize the distribution of the signature's risk scores across X3 groups
+###############################
+
+data_to_plot_X3 <- CoxData_metabric %>%
+  select(Train_prob_THR50, X3.Gene.classifier.subtype) %>%
+  dplyr::rename("X3 Gene Classifier Groups" = X3.Gene.classifier.subtype) %>%
+  dplyr::filter(!is.na(`X3 Gene Classifier Groups`))
+
+table(data_to_plot_X3$`X3 Gene Classifier Groups`)
+
+# Plotting the distribution of THR50 scores across PAM50 subtypes
+tiff("./figures/THR50/metabric/THR50_Score_Distribution_by_X3_Subtype.tiff", width = 2000, height = 1600, res = 300)
+ggplot(data_to_plot_X3, aes(x = Train_prob_THR50, fill = `X3 Gene Classifier Groups`)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 30, alpha = 0.5, position = "identity") +
+  geom_density(alpha = 0.7, adjust = 1, color = "black", size = 1) +
+  facet_wrap(~ `X3 Gene Classifier Groups`, scales = "free_y") +
+  labs(
+    #title = "Distribution of THR50 Scores Across PAM50 Subtypes",
+    x = "THR-50 Risk Score",
+    y = "Density"
+  ) +
+  xlim(0.1, 1.05) + # Adjust x-axis limits to include slightly beyond the maximum value
+  theme_minimal() +
+  theme(legend.position = "bottom", 
+        plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(size = 10, face = "bold"),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        strip.text.x = element_text(size = 12, face = "bold"))
+dev.off()
 
 #######################################
 ## clusters
