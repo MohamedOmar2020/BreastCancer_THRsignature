@@ -139,24 +139,24 @@ TNBC_i20_expr <- TNBC_expr[i20_filt, ]
 
 
 # using logistic regression:
-Data_TNBC <- data.frame(cbind(t(TNBC_expr), 'os' = TNBC_pheno$os_event))
-Data_TNBC$os <- as.factor(Data_TNBC$os)
-table(Data_TNBC$os)
-i20_logReg_TNBC <- glm(as.formula((paste("os ~", paste(i20_filt, collapse = "+")))), data = Data_TNBC, family = "binomial")
+Data_TNBC <- data.frame(cbind(t(TNBC_expr), 'rfs' = TNBC_pheno$os_event))
+Data_TNBC$rfs <- as.factor(Data_TNBC$rfs)
+table(Data_TNBC$rfs)
+i20_logReg_TNBC <- glm(as.formula((paste("rfs ~", paste(i20_filt, collapse = "+")))), data = Data_TNBC, family = "binomial")
 TNBC_pheno$i20_logReg_score <- i20_logReg_TNBC %>% predict(Data_TNBC , type = "response")
 
 #&&&&&&&&&&&&&&&&&&
 ### determine the best threshold-------
 #&&&&&&&&&&&&&&&&&&
-ROC_thr_TNBC <- coords(roc(TNBC_pheno$os_event, TNBC_pheno$i20_logReg_score, direction = "<"), "best")["threshold"]
+ROC_thr_TNBC <- coords(roc(TNBC_pheno$rfs_event, TNBC_pheno$i20_logReg_score, direction = "<"), "best")["threshold"]
 ROC_thr_TNBC
 
 #&&&&&&&&&&&&&&&&&&
 ### Assign samples to subclass based on i20 expression-------
 #&&&&&&&&&&&&&&&&&&
-TNBC_pheno$immune_clusters <- ifelse(TNBC_pheno$i20_logReg_score >= ROC_thr_TNBC$threshold, "TNBC_i-", "TNBC_i+")
+TNBC_pheno$immune_clusters <- ifelse(TNBC_pheno$i20_logReg_score >= ROC_thr_TNBC$threshold, "ER-/HER2-.i-", "ER-/HER2-.i+")
 table(TNBC_pheno$immune_clusters)
-TNBC_pheno$immune_clusters <- factor(TNBC_pheno$immune_clusters, levels = c('TNBC_i-', 'TNBC_i+'))
+TNBC_pheno$immune_clusters <- factor(TNBC_pheno$immune_clusters, levels = c('ER-/HER2-.i-', 'ER-/HER2-.i+'))
 
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
@@ -199,7 +199,7 @@ table(survival_metabric2$X3_merged)
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # fix the levels
 
-cluster_colors <- c("#1960b2", "#DF271F", "#66A61E", "#A253A2", "#1B9E77")
+cluster_colors <- c("#4DAF4A", "#E41A1C", "#1960b2", "#984EA3", "#FF7F00")
 
 
 ##################
@@ -278,13 +278,18 @@ gg <- ggsurvplot(Fit_metabric_X3_rfs,
 ) 
 
 gg$plot + guides(
-  colour = guide_legend(ncol = 2))
+  colour = guide_legend(ncol = 3))
 dev.off()
 
 # Cox
-cox_metabric <- survival_metabric
-cox_metabric$merged_THR_clusters_i20_logReg <- factor(cox_metabric$merged_THR_clusters_i20_logReg, levels = c('PQNBC_i+','PQNBC_i-', 'E3', 'E2', 'E1', 'HER2+')) 
+cox_metabric <- survival_metabric2
+table(survival_metabric2$X3_merged)
+cox_metabric$X3_merged <- factor(cox_metabric$X3_merged, levels = c('ER-/HER2-.i+','ER-/HER2-.i-', 'ER+/HER2- High Prolif', 'ER+/HER2- Low Prolif', 'HER2+')) 
+table(cox_metabric$X3_merged)
 
-cox_Fit_metabric_rfs_THR70_with_i20_logReg <- coxph(Surv(Relapse.Free.Status..Months., Relapse.Free.Status) ~ merged_THR_clusters_i20_logReg, data = cox_metabric)
-summary(cox_Fit_metabric_rfs_THR70_with_i20_logReg)
+cox_Fit_metabric_X3_rfs <- coxph(Surv(rfs_time, rfs_event) ~ X3_merged, data = cox_metabric)
+summary(cox_Fit_metabric_X3_rfs)
+
+
+
 
