@@ -834,7 +834,10 @@ survival_metabric2$THR.clusters_THR70_I20_Merged <- factor(survival_metabric2$TH
 
 # colors
 cluster_colors <- c('#1B9E77', "#E7298A", "#66A61E", "#D95F02", '#6057cc', '#8a899a')
+
 cluster_colors2 <- c('#1B9E77', "#c1b026", "#D95F02", '#6057cc', '#8a899a')
+
+cluster_colors3 <- c("#377EB8", "black", "#984EA3", "#4DAF4A", "#E41A1C")
 
 # OS
 Fit_metabric_os_THR70_I20 <- survfit(Surv(Overall.Survival..Months., Overall.Survival.Status) ~ THR.clusters_THR70_I20_Merged, data = survival_metabric)
@@ -901,10 +904,10 @@ dev.off()
 ## RFS: 
 
 png("./figures/T1_DE_THR70_RFS/metabric_RFS_5clusters_THR70_I20_merged_20yrs_E2merged.png", width = 2000, height = 2000, res = 350)
-ggsurvplot(Fit_metabric_RFS_THR70_I20_2,
+gg <- ggsurvplot(Fit_metabric_RFS_THR70_I20_2,
            risk.table = FALSE,
            pval = FALSE,
-           palette =  cluster_colors2,
+           palette =  cluster_colors3,
            xlim = c(0,240),
            legend.labs = c("E1", "E2","E3", "Pi-", "Pi+"),
            legend.title	= '',
@@ -925,7 +928,8 @@ ggsurvplot(Fit_metabric_RFS_THR70_I20_2,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR70 clusters and RFS: THR70 + I20'
-           ) + guides(
+           ) 
+gg$plot + guides(
              colour = guide_legend(ncol = 2))
 dev.off()
 

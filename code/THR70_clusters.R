@@ -238,8 +238,11 @@ Fit_metabric_RFS_2 <- survfit(Surv(Relapse.Free.Status..Months., Relapse.Free.St
 #cluster_colors <- as.vector(ann_colors$`THR clusters`)
 #cluster_colors <- levels(survival_metabric$`THR clusters`)
 
-cluster_colors <- c("#1B9E77", "#E7298A", "#66A61E" , "#D95F02", "#7570B3") 
-cluster_colors2 <- c('#1B9E77', "#c1b026", "#D95F02", '#7570B3')
+#cluster_colors <- c("#1B9E77", "#E7298A", "#66A61E" , "#D95F02", "#7570B3") 
+#cluster_colors2 <- c('#1B9E77', "#c1b026", "#D95F02", '#7570B3')
+
+cluster_colors <- c("#377EB8", "gray51", "khaki4", "#984EA3", "#D95F02")
+cluster_colors2 <- c("#377EB8", "black", "#984EA3", "#D95F02")
 
 #names(ann_colors$`THR clusters`) <- levels(survival_metabric$`THR clusters`)
 #cluster_colors <- as.vector(ann_colors$`THR clusters`)
@@ -265,7 +268,7 @@ dev.off()
 
 # plot RFS
 png("./figures/logreg/THR70_clusters/metabric_rfs_5clusters_20yrs.png", width = 2000, height = 2000, res = 350)
-ggsurvplot(Fit_metabric_RFS,
+gg <- ggsurvplot(Fit_metabric_RFS,
            risk.table = FALSE,
            pval = TRUE,
            palette = cluster_colors,
@@ -289,13 +292,15 @@ ggsurvplot(Fit_metabric_RFS,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR70 clusters and RFS'
-           ) + guides(
+           ) 
+
+gg$plot + guides(
              colour = guide_legend(ncol = 3))
 dev.off()
 
 ## same with merged E2a and E2b
 png("./figures/logreg/THR70_clusters/metabric_rfs_5clusters_20yrs_E2merged.png", width = 2000, height = 2000, res = 350)
-ggsurvplot(Fit_metabric_RFS_2,
+gg <- ggsurvplot(Fit_metabric_RFS_2,
            risk.table = FALSE,
            pval = TRUE,
            palette =  cluster_colors2,
@@ -319,7 +324,8 @@ ggsurvplot(Fit_metabric_RFS_2,
            risk.table.y.text.col = FALSE,
            risk.table.y.text = FALSE, 
            #title = 'THR70 clusters and RFS: THR70 + I20'
-) + guides(
+) 
+gg$plot + guides(
   colour = guide_legend(ncol = 2))
 dev.off()
 

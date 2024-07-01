@@ -616,7 +616,7 @@ Fit_metabric_rfs_i20_logReg <- survfit(Surv(Relapse.Free.Status..Months., Relaps
 png("./figures/THR70_metabric_clusters/THR70_metabric_rfs_5clusters_HER2_DrawnOut_10yrs_T1_i20_logReg.png", width = 2000, height = 2000, res = 300)
 gg <- ggsurvplot(Fit_metabric_rfs_i20_logReg,
            risk.table = FALSE,
-           pval = TRUE,
+           pval = FALSE,
            palette = cluster_colors,
            xlim = c(0,240),
            legend.labs = c('PNBC.i-', 'PNBC.i+', 'E2', 'E1', 'E3', 'HER2+'),

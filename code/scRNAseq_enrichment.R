@@ -105,7 +105,7 @@ mammaprint <-  c(
 # make a list of all signatures
 signatures <- list(
   THR50 = THR50,  
-  THR70 = THR_70,
+  THR70 = THR70,
   OncotypeDx = oncotype,
   MammaPrint = mammaprint,
   PAM50 = PAM50
@@ -121,12 +121,12 @@ names(gene_sets) <- names(signatures)
 # compute enrichment using UCell
 
 set.seed(123)
-sc_epithelium <- AddModuleScore_UCell(sc_epithelium, features = gene_sets, maxRank = 50, ncores = 10, force.gc = TRUE)
+sc_epithelium <- AddModuleScore_UCell(sc_epithelium, features = gene_sets, maxRank = 70, ncores = 10, force.gc = TRUE)
 head(sc_epithelium[[]])
 
 signature.names <- paste0(names(signatures), "_UCell")
 
-png('./figures/revision/signature_enr_scRNAseq_Kumar.png', width = 2700, height = 2000, res = 250)
+png('./figures/revision/signature_enr_scRNAseq_THR70_Kumar.png', width = 2700, height = 2000, res = 250)
 VlnPlot(sc_epithelium, 
         features = signature.names, 
         pt.size = 0,
@@ -136,12 +136,36 @@ VlnPlot(sc_epithelium,
 dev.off()
 
 
-VlnPlot(sc_epithelium, 
-        features = signature.names, 
-        pt.size = 0,
-        group.by = "cell_type", 
-        same.y.lims = TRUE
-)
+##########################################
+# Test if THR-70 is more enriched in LummHR cells compared to other cell types
+##########################################
+# Define luminal and non-luminal cell types
+luminalHR_types <- c("LummHR-SCGB", "LummHR-active", "LummHR-major")
+other_types <- setdiff(unique(sc_epithelium$author_cell_type), luminalHR_types)
+
+# Create a new column to distinguish between luminal and non-luminal cell types
+sc_epithelium$luminal_vs_other <- ifelse(sc_epithelium$author_cell_type %in% luminalHR_types, "Luminal-HR", "Other epithelial cells")
+
+# Subset the data for relevant comparisons
+luminal_scores <- FetchData(sc_epithelium, vars = c("THR70_UCell", "luminal_vs_other"))
+
+# Perform Wilcoxon Rank-Sum test
+test_result <- luminal_scores %>%
+  group_by(luminal_vs_other) %>%
+  summarise(p_value = wilcox.test(THR70_UCell ~ luminal_vs_other, data = .)$p.value,
+            .groups = 'drop') # Drop the grouping
+
+# Output the test results
+print(test_result)
+
+# Boxplot or Violin plot of UCell scores
+ggplot(luminal_scores, aes(x = luminal_vs_other, y = THR70_UCell, fill = luminal_vs_other)) +
+  geom_boxplot() +
+  labs(title = "Comparison of THR-70 UCell Scores",
+       x = "Group",
+       y = "THR-70 UCell Score") +
+  theme_minimal()
+
 
 #####################
 # signature score smoothing
